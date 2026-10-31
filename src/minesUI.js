@@ -3,13 +3,15 @@
 // 只在切换到扫雷视图时激活，暂停/切走时停掉计时与音效。
 // ============================================================
 
-import { Minesweeper, PRESETS, formatTime, COUNT_COLOR, MINE_CELL } from './minesweeper.js?v=20261031-ui2';
-import { audio } from './audio.js?v=20261031-ui2';
+import { Minesweeper, PRESETS, formatTime, COUNT_COLOR, MINE_CELL } from './minesweeper.js?v=20261031-dual';
+import { audio } from './audio.js?v=20261031-dual';
 
 const $ = id => document.getElementById(id);
 
 let game = null;
 let active = false;
+let userPaused = false;
+let flagMode = false;
 let moveR = 0, moveC = 0;
 
 const FACE = { idle: '☺', wow: '◉', win: '😎', boom: '☹' };
@@ -27,6 +29,7 @@ function render() {
   if (!field || !game) return;
   const { cols, rows, board, adj, over, won } = game;
   field.style.setProperty('--cols', cols);
+  const hadFocus = field.contains(document.activeElement);
   field.innerHTML = '';
   field.setAttribute('aria-colcount', cols);
   field.setAttribute('aria-rowcount', rows);
@@ -43,12 +46,16 @@ function render() {
 
       if (v === MINE_CELL.REVEALED) {
         cell.classList.add('open');
+        cell.setAttribute('aria-label', `${r+1} 行 ${c+1} 列，${adj[i] ? '周围有 '+adj[i]+' 颗雷' : '空白'}`);
         const n = adj[i];
         if (n > 0) {
           const s = el('span', 'mnum', n);
           s.style.color = COUNT_COLOR[n] || 'var(--text)';
           cell.appendChild(s);
         }
+      } else if (over && v === MINE_CELL.FLAG && !game.mines[i]) {
+        cell.classList.add('wrong-flag'); cell.textContent = '×';
+        cell.setAttribute('aria-label', `${r+1} 行 ${c+1} 列，误标旗`);
       } else if (v === MINE_CELL.FLAG) {
         cell.classList.add('flag');
         cell.innerHTML = '<span aria-hidden="true">🚩</span>';
@@ -69,7 +76,7 @@ function render() {
         cell.textContent = '◈';
       }
 
-      cell.addEventListener('click', e => { e.preventDefault(); focusCell(cell, r, c); game.reveal(r, c); });
+      cell.addEventListener('click', e => { e.preventDefault(); focusCell(cell, r, c); if (flagMode) game.cycleMark(r,c); else if (!game.chord(r,c)) game.reveal(r,c); });
       cell.addEventListener('contextmenu', e => { e.preventDefault(); focusCell(cell, r, c); game.cycleMark(r, c); });
       cell.addEventListener('mouseenter', () => { if (active && !game.over) setFace('wow'); });
       cell.addEventListener('mouseleave', () => { if (active && !game.over) setFace('idle'); });
@@ -78,6 +85,7 @@ function render() {
     }
   }
   refreshFocus();
+  if (hadFocus) field.querySelector('.mcell[tabindex="0"]')?.focus({preventScroll:true});
 }
 
 function refreshFocus() {
@@ -98,6 +106,8 @@ function updateHud(_g, payload = {}) {
   const left = game.minesLeft();
   const flags = game.flags();
   setText('mines-total', game.mineTotal);
+  setText('mines-level-label', PRESETS[game.preset].label);
+  if ($('mines-difficulty')) $('mines-difficulty').value = game.preset;
   setText('mines-size', `${game.cols} × ${game.rows}`);
   setText('mines-flags', flags);
   setText('mines-left', left);
@@ -140,9 +150,10 @@ function setText(id, v) { const e = $(id); if (e) e.textContent = v; }
 // ---------- 键盘 ----------
 function bindKeys() {
   document.addEventListener('keydown', e => {
-    if (!active || !game) return;
+    if (!active || !game || userPaused || document.hidden) return;
     const tag = e.target?.tagName;
     if (tag === 'SELECT' || tag === 'INPUT' || e.target?.closest?.('dialog')) return;
+    if (e.target?.closest?.('button, a')) return;
     const field = $('minefield');
     if (!field?.contains(e.target) && e.target !== field) {
       // 允许在页面任意处用方向键移动雷区焦点
@@ -176,9 +187,11 @@ function bindKeys() {
 function start(preset) {
   stop();
   game = new Minesweeper({ root: document.body });
+  userPaused = false;
   game.start(preset || $('mines-difficulty')?.value || 'easy');
+  syncPause();
   moveR = 0; moveC = 0;
-  game.subscribe((_g, p) => { render(); updateHud(_g, p); });
+  game.subscribe((_g, p) => { if (!p.tick) render(); updateHud(_g, p); });
   render(); updateHud(game);
 }
 
@@ -192,9 +205,9 @@ function resume() {
     if (saved) {
       game = saved;
       // 恢复视图时重绑渲染回调
-      game.subscribe((_g, p) => { render(); updateHud(_g, p); });
+      game.subscribe((_g, p) => { if (!p.tick) render(); updateHud(_g, p); });
       moveR = 0; moveC = 0;
-      render(); updateHud(game);
+      syncPause(); render(); updateHud(game);
     } else start($('mines-difficulty')?.value || 'easy');
   }
 }
@@ -205,18 +218,28 @@ export const minesApp = {
   activate() {
     active = true;
     if (!game || game.over || !game.firstMove) resume();
-    else { game._startTimer?.(); render(); }
-    audio.setPaused(false);
+    else render();
+    syncPause();
   },
   deactivate() {
     active = false;
     audio.setPaused(true);
-    if (game) { game._stopTimer?.(); game._save(); }
+    if (game) game.setPaused(true);
   },
   start,
   restart(preset) { start(preset); },
   destroy() { stop(); },
 };
+
+function syncPause() {
+  if (game) game.setPaused(!active || userPaused || document.hidden);
+  if (active) audio.setPaused(userPaused || document.hidden || !!game?.over);
+  const button = $('mines-pause-button');
+  button?.setAttribute('aria-pressed', String(userPaused));
+  if (button) button.textContent = userPaused ? '▶ 继续' : 'Ⅱ 暂停';
+  if ($('mines-pause-overlay')) $('mines-pause-overlay').hidden = !userPaused;
+}
+document.addEventListener('visibilitychange', syncPause);
 
 // 延迟绑定：DOM 可能在本模块加载后才完整
 requestAnimationFrame(() => {
@@ -232,18 +255,22 @@ requestAnimationFrame(() => {
   $('mine-face')?.addEventListener('click', () => start(game?.preset || $('mines-difficulty')?.value));
   $('mines-pause-button')?.addEventListener('click', () => {
     if (!game) return;
-    const on = !game._timer;
-    if (on) { game._startTimer(); $('mines-pause-button').setAttribute('aria-pressed', 'false'); $('mines-pause-overlay').hidden = true; }
-    else { game._stopTimer(); $('mines-pause-button').setAttribute('aria-pressed', 'true'); $('mines-pause-overlay').hidden = false; }
+    if (game.over) return;
+    userPaused = !userPaused; syncPause();
   });
   $('mines-resume-button')?.addEventListener('click', () => $('mines-pause-button').click());
-  $('mines-help')?.addEventListener('click', () => $('help-button')?.click());
+  $('mines-flag-mode')?.addEventListener('click', e => {
+    flagMode = !flagMode; e.currentTarget.setAttribute('aria-pressed', String(flagMode));
+    e.currentTarget.textContent = flagMode ? '🚩 插旗模式：开' : '🚩 插旗模式：关';
+  });
+  $('mines-help')?.addEventListener('click', () => $('mines-help-dialog')?.showModal());
+  $('mines-help-close')?.addEventListener('click', () => $('mines-help-dialog')?.close());
 
   // 扫雷专属音量与音乐控件（与数独共用同一份 audio 设置，UI 双向同步）
   const sync = () => {
     const prefs = audio.getSettings();
     const mb = $('mines-music-button'), eb = $('mines-effects-button');
-    if (mb) { mb.setAttribute('aria-pressed', String(prefs.music)); mb.textContent = prefs.music ? '♫ 暂停音乐' : '♫ 播放音乐'; mb.disabled = !prefs.supported; }
+    if (mb) { mb.setAttribute('aria-pressed', String(prefs.music)); mb.textContent = !prefs.music ? '♫ 播放音乐' : prefs.playing ? '♫ 暂停音乐' : prefs.paused ? '♫ 音乐已启用' : '♫ 点击恢复'; mb.disabled = !prefs.supported; }
     if (eb) { eb.setAttribute('aria-pressed', String(prefs.effects)); eb.textContent = prefs.effects ? '♪ 音效开启' : '♪ 音效关闭'; eb.disabled = !prefs.supported; }
     const vol = $('mines-volume-slider');
     if (vol) vol.value = prefs.volume;
@@ -252,7 +279,9 @@ requestAnimationFrame(() => {
     const st = $('mines-audio-status');
     if (st) st.textContent = !prefs.supported ? '当前浏览器不支持声音。'
       : !prefs.volume ? '当前已静音。'
-      : prefs.music ? '正在播放舒缓音乐。' : '点击"播放音乐"，让排雷也安静下来。';
+      : prefs.music && prefs.paused ? '已暂停，继续游戏后恢复音乐。'
+      : prefs.music && prefs.playbackError ? prefs.playbackError
+      : prefs.playing ? '正在播放舒缓音乐。' : prefs.music ? '点击棋盘或“点击恢复”启用声音。' : '点击“播放音乐”，让排雷也安静下来。';
   };
   $('mines-music-button')?.addEventListener('click', () => {
     const prefs = audio.getSettings();
@@ -262,7 +291,7 @@ requestAnimationFrame(() => {
   $('mines-effects-button')?.addEventListener('click', () => audio.setEffectsEnabled(!audio.getSettings().effects));
   $('mines-volume-slider')?.addEventListener('input', e => audio.setVolume(e.target.value));
   window.addEventListener('sudoku-audio-change', sync);
-  document.addEventListener('pointerdown', () => { if (active && audio.getSettings().music) void audio.unlock(); }, { passive: true });
+  document.addEventListener('pointerdown', event => { if (active && !event.target.closest?.('#mines-music-button') && audio.getSettings().music) void audio.unlock(); }, { passive: true });
   sync();
 
   // 未激活时若已有存档也不急着启动，等切到扫雷再恢复

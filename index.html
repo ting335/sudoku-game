@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#f7f7f2">
-    <meta name="description" content="一款轻量、可离线使用的数独与扫雷游戏。">
+    <meta name="description" content="轻量数独与扫雷网页游戏，支持本机存档与舒缓音乐。">
     <title>数独 · 扫雷 · 静心一局</title>
     <link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
     <script>
@@ -16,9 +16,9 @@
         document.documentElement.setAttribute('data-theme', t);
       })();
     </script>
-    <link rel="stylesheet" href="./src/styles.css?v=20261101">
-    <script type="module" src="./src/main.js?v=20261101"></script>
-    <script type="module" src="./src/minesUI.js?v=20261101"></script>
+    <link rel="stylesheet" href="./src/styles.css?v=20261031-dual">
+    <script type="module" src="./src/main.js?v=20261031-dual"></script>
+
   </head>
   <body>
     <div class="app-shell">
@@ -171,10 +171,10 @@
               <div class="mines-top">
                 <div class="mines-title-area">
                   <p class="eyebrow">经典扫雷</p>
-                  <h1 class="mines-main-title">初级 · <span id="mines-total">10</span> 颗雷</h1>
+                  <h1 class="mines-main-title"><span id="mines-level-label">初级</span> · <span id="mines-total">10</span> 颗雷</h1>
                   <p class="mines-sub">棋盘 <span id="mines-size">9 × 9</span> · 左键揭开，右键插旗</p>
                 </div>
-                <select id="mines-difficulty" class="mines-diff-select">
+                <select aria-label="扫雷难度" id="mines-difficulty" class="mines-diff-select">
                   <option value="easy" selected>初级</option>
                   <option value="medium">中级</option>
                   <option value="hard">高级</option>
@@ -212,6 +212,7 @@
               <div class="mines-actions">
                 <button id="mines-new-button" class="action-btn">＋ 新游戏</button>
                 <button id="mines-restart-button" class="action-btn">↻ 重开</button>
+                <button id="mines-flag-mode" class="action-btn" aria-pressed="false">🚩 插旗模式：关</button>
                 <button id="mines-help" class="action-btn">? 帮助</button>
                 <button id="mines-pause-button" class="action-btn" aria-pressed="false">Ⅱ 暂停</button>
               </div>
@@ -226,6 +227,14 @@
                 最佳：初级 <strong id="mine-record-easy">—</strong> · 中级 <strong id="mine-record-medium">—</strong> · 高级 <strong id="mine-record-hard">—</strong>
               </div>
 
+              <section class="mines-sound" aria-label="扫雷声音设置">
+                <button id="mines-music-button" class="action-btn" aria-pressed="false">♫ 播放音乐</button>
+                <button id="mines-effects-button" class="action-btn" aria-pressed="true">♪ 音效开启</button>
+                <label>音量 <output id="mines-volume-value">35%</output>
+                  <input id="mines-volume-slider" aria-label="扫雷音量" type="range" min="0" max="100" value="35">
+                </label>
+                <p id="mines-audio-status" role="status"></p>
+              </section>
               <!-- 规则 -->
               <div class="mines-rules">
                 <h3>规则</h3>
@@ -245,7 +254,7 @@
 
       <footer class="page-footer">
         <span>给自己一点安静的时间。</span>
-        <span>数独 · 扫雷 · 离线可玩</span>
+        <span>数独 · 扫雷 · 本地存档</span>
       </footer>
     </div>
 
@@ -263,8 +272,16 @@
       <button class="primary-button" id="win-new-game" type="button">再来一局</button>
     </dialog>
 
+    <dialog class="info-dialog" id="mines-help-dialog" aria-labelledby="mines-help-title">
+      <h2 id="mines-help-title">扫雷怎么玩</h2>
+      <p>揭开所有非雷格即可获胜。数字表示周围八格的雷数；首次揭开及其周围八格不布雷。</p>
+      <p>右键循环切换旗帜、问号、空格。手机可开启“插旗模式”，再点格子标记。已揭开的数字周围旗数相符时，点击数字或按空格快速展开；误标旗会导致踩雷。</p>
+      <p>方向键移动，空格揭开，F 标旗。暂停、切换游戏或切到后台时停止计时。</p>
+      <button id="mines-help-close" class="primary-button">知道了</button>
+    </dialog>
     <!-- 切换逻辑 -->
     <script type="module">
+      import { minesApp } from './src/minesUI.js?v=20261031-dual';
       const tabs = document.querySelectorAll('.game-tab');
       const views = document.querySelectorAll('.game-view');
       const indicator = document.querySelector('.tab-indicator');
@@ -286,17 +303,8 @@
           indicator.style.left = activeTab.offsetLeft + 'px';
           indicator.style.width = activeTab.offsetWidth + 'px';
         }
-        if (game === 'mines') {
-          requestAnimationFrame(() => {
-            if (window.minesApp && typeof window.minesApp.activate === 'function') {
-              window.minesApp.activate();
-            }
-          });
-        } else {
-          if (window.minesApp && typeof window.minesApp.deactivate === 'function') {
-            window.minesApp.deactivate();
-          }
-        }
+        if (game === 'mines') minesApp.activate(); else minesApp.deactivate();
+        window.dispatchEvent(new Event('game-view-change'));
       }
 
       tabs.forEach(tab => tab.addEventListener('click', () => switchGame(tab.dataset.game)));
@@ -410,6 +418,35 @@
       .mcell.boom { background: #ff0000; }
       .mcell.cursor { outline: 2px solid var(--accent, #5cc48a); outline-offset: -2px; }
       .mnum { pointer-events: none; }
+      .game-center { padding: 10px 0; min-width: 0; }
+      .mine-center .mines-wrap { max-width: 1000px; min-width: 0; }
+      .mines-top { max-width: 620px; gap: 12px; }
+      .mines-board-card { position: relative; max-width: 100%; overflow: auto; border-radius: 10px; border: 1px solid var(--border-strong); padding: 8px; background: var(--surface); }
+      #minefield { width: max-content; grid-template-columns: repeat(var(--cols, 9), 32px); }
+      .mcell { width: 32px; height: 32px; touch-action: manipulation; }
+      .mines-rules { max-width: 620px; padding: 12px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+      .mines-sound { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; margin: 12px 0 0; font-size: 12px; }
+      .mines-sound label { display: flex; align-items: center; gap: 6px; }
+      .mines-sound input { width: 100px; accent-color: var(--accent); }
+      .mines-sound p { flex-basis: 100%; margin: 0; text-align: center; color: var(--text-muted); }
+      .action-btn { min-height: 36px; font-size: 13px; border-radius: 8px; }
+      .action-btn[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+      .mcell.wrong-flag { background: #f8d6cd; color: #a82c22; }
+      html[data-theme="dark"] .mcell { background: #354a40; border-color: #597064 #18251f #18251f #597064; color: var(--text); }
+      html[data-theme="dark"] .mcell.open { background: #202e27; border: 1px solid #43544a; }
+      html[data-theme="dark"] .mcell.mine { background: #833f3b; }
+      html[data-theme="dark"] .mcell.boom, html[data-theme="dark"] .mcell.wrong-flag { background: #a03933; }
+      html[data-theme="dark"] { --mine-1: #8abde0; --mine-2: #8dd4a3; --mine-3: #e4bb6e; --mine-4: #f19f96; --mine-5: #d6a7dc; --mine-6: #8bd0cd; --mine-7: #d5dfd9; --mine-8: #eee; }
+      @media (max-width: 560px) {
+        .topbar { height: auto; min-height: 58px; flex-wrap: wrap; gap: 6px; padding: 8px 0; }
+        .topbar .brand { font-size: 18px; gap: 6px; }
+        .topbar .brand-mark { width: 25px; height: 25px; }
+        .topbar-right .offline-label { display: none; }
+        .topbar-right .icon-button { width: 30px; height: 30px; }
+        .game-tab { padding: 7px 9px; }
+        #minefield { grid-template-columns: repeat(var(--cols, 9), 28px); }
+        .mcell { width: 28px; height: 28px; }
+      }
     </style>
   </body>
 </html>

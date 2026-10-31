@@ -6,7 +6,7 @@
 // ============================================================
 
 import { makeEvenCells, evenAllows } from './core/even.js';
-import { sfx, audio } from './audio.js?v=20261031-layout';
+import { sfx, audio } from './audio.js?v=20261031-dual';
 import { showCandidates, highlightUniqueLocation, fillOneCorrect } from './hint.js?v=20261031-layout';
 
 // ---------- 工具函数 ----------
@@ -546,6 +546,7 @@ function updateRecord() {
 // ---------- 计时 / 暂停 / 撤销重做 ----------
 function startTimer() {
   stopTimer();
+  if (document.hidden || document.getElementById('view-sudoku')?.hidden) return;
   state.timerInterval = setInterval(() => {
     if (!state.paused) { state.timer++; if (timerEl) { timerEl.textContent = formatTime(state.timer); timerEl.setAttribute('datetime', `PT${state.timer}S`); } }
   }, 1000);
@@ -622,12 +623,13 @@ function setupAudioControls() {
   const resumeAudio = (event) => {
     // The music button handles its own gesture. Resuming on pointerdown here
     // would make its subsequent click see "playing" and immediately turn it off.
-    if (event.target.closest?.('#music-button')) return;
+    if (event.target.closest?.('#music-button, #mines-music-button')) return;
     if (audio.getSettings().music) void audio.unlock();
   };
   document.addEventListener('pointerdown', resumeAudio, { passive: true });
   document.addEventListener('keydown', resumeAudio);
   document.addEventListener('visibilitychange', () => {
+    if (document.getElementById('view-sudoku')?.hidden) return;
     audio.setPaused(document.hidden || state.paused || winDialog.open);
   });
   renderAudio();
@@ -658,7 +660,7 @@ function showToast(msg) {
 // ---------- 键盘 / 事件绑定 ----------
 function bindKeyboard() {
   document.addEventListener('keydown', e => {
-    if (state.paused) return;
+    if (state.paused || document.getElementById('view-sudoku')?.hidden) return;
     const tag = e.target && e.target.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
     if (e.target && e.target.closest?.('dialog')) return;
@@ -706,14 +708,23 @@ function bindEvents() {
     document.addEventListener('click', () => { if (difficultyTooltip) difficultyTooltip.hidden = true; });
   }
 
-  if (helpButton && infoDialog) helpButton.addEventListener('click', () => infoDialog.showModal());
+  if (helpButton && infoDialog) helpButton.addEventListener('click', () => {
+    const dialog = document.getElementById('view-sudoku')?.hidden ? $('mines-help-dialog') : infoDialog;
+    dialog?.showModal();
+  });
   const dialogClose = document.getElementById('dialog-close'), dialogOk = document.getElementById('dialog-ok');
   if (dialogClose && infoDialog) dialogClose.addEventListener('click', () => infoDialog.close());
   if (dialogOk && infoDialog) dialogOk.addEventListener('click', () => infoDialog.close());
   const winNewGame = document.getElementById('win-new-game');
   if (winNewGame && winDialog) winNewGame.addEventListener('click', () => { winDialog.close(); startNewGame(); });
   if (dailyButton) dailyButton.addEventListener('click', () => { showToast('已为你开启今日挑战'); startNewGame(); });
-  document.addEventListener('visibilitychange', () => { audio.setPaused(document.hidden || state.paused); if (!document.hidden && !state.paused) startTimer(); else stopTimer(); });
+  const syncActiveView = () => {
+    if (document.getElementById('view-sudoku')?.hidden) { stopTimer(); saveProgress(); return; }
+    audio.setPaused(document.hidden || state.paused || winDialog.open);
+    if (!document.hidden && !state.paused && !winDialog.open) startTimer(); else stopTimer();
+  };
+  document.addEventListener('visibilitychange', syncActiveView);
+  window.addEventListener('game-view-change', syncActiveView);
   setupHintMenu(); bindKeyboard();
 }
 

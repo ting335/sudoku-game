@@ -5,7 +5,7 @@
 // 逻辑完全独立，不依赖数独的 state / DOM。
 // ============================================================
 
-import { sfx, audio } from './audio.js?v=20261031-ui2';
+import { sfx, audio } from './audio.js?v=20261031-dual';
 
 const SAVE_KEY = 'minesweeper-progress-v1';
 const RECORD_KEY = 'minesweeper-record-v1';
@@ -138,10 +138,17 @@ export class Minesweeper {
       const raw = localStorage.getItem(SAVE_KEY);
       if (!raw) return null;
       const d = JSON.parse(raw);
-      if (!d || !Array.isArray(d.board) || !Array.isArray(d.mines)) return null;
+      const p = PRESETS[d?.preset];
+      if (!p || d.cols !== p.cols || d.rows !== p.rows ||
+          !Array.isArray(d.board) || !Array.isArray(d.mines) ||
+          d.board.length !== p.cols * p.rows || d.mines.length !== d.board.length ||
+          d.mines.some(v => typeof v !== 'boolean') ||
+          d.mines.filter(Boolean).length !== p.mines ||
+          d.board.some((v,i) => ![CELL.HIDDEN,CELL.REVEALED,CELL.FLAG,CELL.QUESTION].includes(v) || (v === CELL.REVEALED && d.mines[i])) ||
+          typeof d.firstMove !== 'boolean' || !Number.isInteger(d.elapsed) || d.elapsed < 0) return null;
       const m = new Minesweeper(screen);
       Object.assign(m, {
-        preset: d.preset || 'easy',
+        preset: d.preset, mineTotal: p.mines, paused: false,
         cols: d.cols, rows: d.rows,
         mines: d.mines.slice(), board: d.board.slice(),
         firstMove: d.firstMove || false,
@@ -149,7 +156,7 @@ export class Minesweeper {
       });
       m.adj = countAdjacent(m.mines, m.cols, m.rows);
       m.alive = true; m.over = false; m.won = false;
-      m._tick();
+      // The active view starts the timer; loading alone must not run it.
       return m;
     } catch (e) { return null; }
   }
@@ -157,14 +164,14 @@ export class Minesweeper {
   // ---------- 生命周期 ----------
   start(preset = 'easy', seed) {
     const p = PRESETS[preset] || PRESETS.easy;
-    this.preset = preset;
+    this.preset = PRESETS[preset] ? preset : 'easy';
     this.cols = p.cols; this.rows = p.rows; this.mineTotal = p.mines;
     this.mines = placeMines(this.cols, this.rows, this.mineTotal, 0, 0);
     this.adj = countAdjacent(this.mines, this.cols, this.rows);
     this.board = makeGrid(this.cols, this.rows, CELL.HIDDEN);
     this.firstMove = false;
     this.elapsed = 0;
-    this.alive = true; this.over = false; this.won = false;
+    this.alive = true; this.over = false; this.won = false; this.paused = false;
     this._lastTick = 0;
     this._notify();
     this._save();
@@ -180,7 +187,7 @@ export class Minesweeper {
 
   // ---------- 计时 ----------
   _startTimer() {
-    if (this._timer) return;
+    if (this._timer || this.paused || !this.firstMove || this.over) return;
     this._lastTick = performance.now();
     this._timer = requestAnimationFrame(this._loop);
   }
@@ -192,7 +199,7 @@ export class Minesweeper {
   }
 
   _loop = (now) => {
-    if (!this.alive || this.over) { this._timer = null; return; }
+    if (!this.alive || this.over || this.paused) { this._timer = null; return; }
     const dt = now - this._lastTick;
     if (dt >= 1000) {
       this._lastTick = now - (dt % 1000);
@@ -208,19 +215,23 @@ export class Minesweeper {
     else this._notify({ tick: true });
   }
 
+  setPaused(value) {
+    this.paused = !!value;
+    if (this.paused) this._stopTimer(); else this._startTimer();
+    this._save();
+  }
+
   // ---------- 操作 ----------
   reveal(r, c) {
-    if (!this.alive || this.over) return false;
+    if (!this.alive || this.over || this.paused) return false;
     const i = idx(this.cols, r, c);
     if (!inBounds(this.cols, this.rows, r, c)) return false;
-    if (this.board[i] === CELL.FLAG || this.board[i] === CELL.QUESTION) return false;
+    if (this.board[i] !== CELL.HIDDEN) return false;
 
     // 首次点击：把雷位重新摆到点击点之外，保证零风险开局
     if (!this.firstMove) {
-      if (this.mines[i]) {
-        this.mines = placeMines(this.cols, this.rows, this.mineTotal, r, c);
-        this.adj = countAdjacent(this.mines, this.cols, this.rows);
-      }
+      this.mines = placeMines(this.cols, this.rows, this.mineTotal, r, c);
+      this.adj = countAdjacent(this.mines, this.cols, this.rows);
       this.firstMove = true;
       this._startTimer();
     }
@@ -240,7 +251,8 @@ export class Minesweeper {
   }
 
   chord(r, c) {
-    if (!this.alive || this.over || !this.firstMove) return false;
+    if (!this.alive || this.over || this.paused || !this.firstMove) return false;
+    if (!inBounds(this.cols, this.rows, r, c)) return false;
     const i = idx(this.cols, r, c);
     if (this.board[i] !== CELL.REVEALED) return false;
     const n = this.adj[i];
@@ -257,7 +269,7 @@ export class Minesweeper {
   }
 
   cycleMark(r, c) {
-    if (!this.alive || this.over || !this.firstMove) return false;
+    if (!this.alive || this.over || this.paused || !this.firstMove) return false;
     const i = idx(this.cols, r, c);
     if (!inBounds(this.cols, this.rows, r, c)) return false;
     if (this.board[i] === CELL.REVEALED) return false;
@@ -272,6 +284,7 @@ export class Minesweeper {
 
   // 数字格上左右键/空格：标旗；已标旗再按则取消（长按辅助）
   toggleFlag(r, c) {
+    if (!this.alive || this.over || this.paused || !this.firstMove) return false;
     const i = idx(this.cols, r, c);
     if (!inBounds(this.cols, this.rows, r, c)) return false;
     if (this.board[i] === CELL.REVEALED || this.board[i] === CELL.MINE) return false;
@@ -306,11 +319,12 @@ export class Minesweeper {
   }
 
   _updateRecord() {
-    const raw = localStorage.getItem(RECORD_KEY);
+    let raw;
+    try { raw = localStorage.getItem(RECORD_KEY); } catch { raw = null; }
     const rec = raw ? (() => { try { return JSON.parse(raw); } catch (e) { return null; } })() : null;
     const cur = (rec && typeof rec === 'object') ? rec : { best: {} };
     const prev = cur.best?.[this.preset];
-    if (!prev || this.elapsed < prev) {
+    if (prev == null || this.elapsed < prev) {
       cur.best = { ...(cur.best || {}), [this.preset]: this.elapsed };
     }
     try { localStorage.setItem(RECORD_KEY, JSON.stringify(cur)); } catch (e) {}
