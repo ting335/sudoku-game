@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f7f7f2">
+    <meta name="description" content="一款轻量、可离线使用的数独与扫雷游戏。">
+    <title>数独 · 扫雷 · 静心一局</title>
+    <link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
+    <script>
+      (function () {
+        var t = localStorage.getItem('theme');
+        if (!t) {
+          t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        document.documentElement.setAttribute('data-theme', t);
+      })();
+    </script>
+    <link rel="stylesheet" href="./src/styles.css?v=20261101">
+    <script type="module" src="./src/main.js?v=20261101"></script>
+    <script type="module" src="./src/minesUI.js?v=20261101"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="./" aria-label="首页">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+          <span>静心一局<span class="brand-dot">.</span></span>
+        </a>
+
+        <div class="game-tabs" role="tablist" aria-label="选择游戏">
+          <button class="game-tab active" data-game="sudoku" role="tab" aria-selected="true">
+            <span aria-hidden="true">▦</span> 数独
+          </button>
+          <button class="game-tab" data-game="mines" role="tab" aria-selected="false">
+            <span aria-hidden="true">◈</span> 扫雷
+          </button>
+          <span class="tab-indicator" aria-hidden="true"></span>
+        </div>
+
+        <div class="topbar-right">
+          <span class="offline-label"><span class="status-dot"></span>本地游戏</span>
+          <button class="icon-button" id="theme-button" type="button" aria-label="切换主题" title="切换主题">🌓</button>
+          <button class="icon-button" id="help-button" type="button" aria-label="查看游戏说明" title="游戏说明">?</button>
+        </div>
+      </header>
+
+      <div class="views-container">
+
+        <!-- ======== 数独视图（原版一字未动） ======== -->
+        <div id="view-sudoku" class="game-view active" data-game-view="sudoku">
+          <div class="game-center">
+            <main class="layout">
+              <aside class="side-column side-left" aria-label="进度与规则">
+                <section class="side-card progress-card">
+                  <div class="side-card-heading"><span class="side-icon progress-icon">◉</span><h2>本局进度</h2></div>
+                  <div class="progress-number"><strong id="progress-count">0</strong><span>/ 81 格</span></div>
+                  <div class="progress-track"><span id="progress-bar"></span></div>
+                  <p class="progress-caption" id="progress-caption">慢慢来，每填一格都算进步。</p>
+                </section>
+                <section class="side-card rules-card">
+                  <div class="side-card-heading"><span class="side-icon rules-icon">⌗</span><h2>数独规则</h2></div>
+                  <p>在空格填入 <strong>1–9</strong>，让每一行、每一列和每个 3×3 宫都不重复。</p>
+                  <p id="diagonal-rule" class="diagonal-rule-text" style="display:none;">✦ <strong>对角线模式</strong>：两条对角线上的数字也不能重复。</p>
+                  <div class="rule-example" aria-label="每行、每列、每宫、对角线不重复">
+                    <span>每行</span><i>↔</i><span>每列</span><i>↕</i><span>每宫</span><i>✦</i><span>对角线</span>
+                  </div>
+                </section>
+                <p id="even-rule" class="even-rule-text" hidden>◯ 偶数规则：圆圈标记格只能填写 2、4、6、8。可与对角线模式叠加。</p>
+                <section class="side-card record-card">
+                  <div class="side-card-heading"><span class="side-icon record-icon">⌁</span><h2>今日记录</h2></div>
+                  <div class="record-row"><span>完成局数</span><strong id="completed-count">0</strong></div>
+                  <div class="record-row"><span>最佳用时</span><strong id="best-time">—</strong></div>
+                  <p class="local-note">记录只保存在这台设备的浏览器中。</p>
+                </section>
+              </aside>
+
+              <section class="game-column" aria-labelledby="page-title">
+                <div class="intro-row">
+                  <div>
+                    <p class="eyebrow" id="game-date">每日挑战</p>
+                    <h1 id="page-title">静心一局<span class="title-period">。</span></h1>
+                    <p class="subtitle">九宫格里，给思绪留一点空白。</p>
+                  </div>
+                  <button class="daily-button" id="daily-button" type="button">
+                    <span class="daily-icon" aria-hidden="true">✦</span><span>今日挑战</span>
+                  </button>
+                </div>
+
+                <section class="board-card" aria-label="数独棋盘">
+                  <div class="board-toolbar">
+                    <div class="difficulty-wrapper">
+                      <label class="difficulty-control" for="difficulty-select">
+                        <span class="sr-only">选择难度</span>
+                        <select id="difficulty-select" aria-label="选择难度">
+                          <option value="easy">初级</option>
+                          <option value="medium" selected>中级</option>
+                          <option value="hard">高级</option>
+                        </select>
+                        <span class="select-chevron" aria-hidden="true">⌄</span>
+                      </label>
+                      <button id="difficulty-help" class="help-inline" aria-label="难度说明" title="三种难度有什么区别？">？</button>
+                      <div id="difficulty-tooltip" class="difficulty-tooltip" hidden>
+                        <h4>🎯 难度说明</h4>
+                        <div class="diff-row"><span class="diff-tag easy">初级</span><span>随机挖 38 格 · 每一步都有唯一确定数字</span></div>
+                        <div class="diff-row"><span class="diff-tag medium">中级</span><span>对称挖 48 格 · 需要观察隐性唯一位置</span></div>
+                        <div class="diff-row"><span class="diff-tag hard">高级</span><span>对称挖 56 格 · 需要区块排除、数对等进阶技巧</span></div>
+                        <p class="diff-note">💡 对角线模式额外增加两条约束，同难度下会稍容易一些</p>
+                      </div>
+                    </div>
+                    <div class="timer-wrap" aria-label="游戏计时">
+                      <span class="timer-icon" aria-hidden="true">◷</span><time id="timer" datetime="PT0S">00:00</time>
+                    </div>
+                    <button class="mode-toggle" id="diagonal-toggle" type="button" aria-pressed="false" title="开启对角线模式"><span class="mode-icon">✕</span><span>对角线</span></button>
+                    <button class="mode-toggle" id="even-toggle" type="button" aria-pressed="false" title="圆圈格只能填2、4、6、8">◯ 偶数</button>
+                    <button class="icon-button pause-button" id="pause-button" type="button" aria-label="暂停游戏" title="暂停">Ⅱ</button>
+                  </div>
+                  <div id="board" class="sudoku-board" role="grid" aria-label="数独 9 行 9 列" aria-busy="true"></div>
+                  <div class="board-footer">
+                    <div class="mistake-meter" aria-label="错误次数"><span class="mistake-mark">×</span><span id="mistakes">0</span><span class="mistake-caption">错误</span></div>
+                    <button class="text-button" id="erase-button" type="button"><span aria-hidden="true">⌫</span> 擦除</button>
+                  </div>
+                  <div class="pause-overlay" id="pause-overlay" hidden>
+                    <div class="pause-card"><span class="pause-symbol" aria-hidden="true">Ⅱ</span><h2>暂停一下</h2><p>休息好了，继续解题。</p><button class="primary-button" id="resume-button" type="button">继续游戏</button></div>
+                  </div>
+                </section>
+
+                <section class="number-pad" aria-label="数字输入">
+                  <div class="digit-row" id="digit-pad"></div>
+                  <div class="action-row">
+                    <button class="tool-button" id="notes-button" type="button" aria-pressed="false"><span class="tool-icon">✎</span><span>笔记</span></button>
+                    <div class="hint-wrapper">
+                      <button class="tool-button hint-button" id="hint-button" type="button"><span class="tool-icon">✧</span><span>提示</span></button>
+                      <div class="hint-menu" id="hint-menu" hidden>
+                        <button data-hint="candidates">显示候选数</button>
+                        <button data-hint="location">高亮唯一位置</button>
+                        <button data-hint="fill">直接填入</button>
+                      </div>
+                    </div>
+                    <button class="tool-button" id="undo-button" type="button" disabled><span class="tool-icon">↶</span><span>撤销</span></button>
+                    <button class="tool-button" id="redo-button" type="button" disabled><span class="tool-icon">↷</span><span>重做</span></button>
+                  </div>
+                </section>
+              </section>
+
+              <aside class="side-column side-right" aria-label="声音与操作">
+                <section class="side-card sound-card" aria-labelledby="sound-title">
+                  <div class="side-card-heading"><span class="side-icon sound-icon" aria-hidden="true">♫</span><h2 id="sound-title">声音与氛围</h2></div>
+                  <div class="sound-toggles">
+                    <button id="music-button" type="button" aria-pressed="false">♫ 播放音乐</button>
+                    <button id="effects-button" type="button" aria-pressed="true">♪ 音效开启</button>
+                  </div>
+                  <div class="volume-label"><label for="volume-slider">音量</label><output id="volume-value" for="volume-slider">35%</output></div>
+                  <input id="volume-slider" class="volume-slider" type="range" min="0" max="100" step="1" value="35">
+                  <p class="local-note" id="audio-status" role="status">点击"播放音乐"，开启一段舒缓旋律。</p>
+                </section>
+                <div class="number-legend" aria-label="数字说明"><span><i class="legend-given">8</i> 题目数字</span><span><i class="legend-user">8</i> 自己填写</span></div>
+                <button class="new-game-button" id="new-game-button" type="button"><span aria-hidden="true">＋</span> 开始新一局</button>
+                <p class="keyboard-hint">键盘 <kbd>1</kbd>–<kbd>9</kbd> 填数字，<kbd>方向键</kbd> 移动，<kbd>Delete</kbd> 擦除</p>
+              </aside>
+            </main>
+          </div>
+        </div>
+
+        <!-- ======== 扫雷视图（优化排版） ======== -->
+        <div id="view-mines" class="game-view" data-game-view="mines" hidden>
+          <div class="game-center mine-center">
+            <div class="mines-wrap">
+
+              <!-- 标题 + 难度 -->
+              <div class="mines-top">
+                <div class="mines-title-area">
+                  <p class="eyebrow">经典扫雷</p>
+                  <h1 class="mines-main-title">初级 · <span id="mines-total">10</span> 颗雷</h1>
+                  <p class="mines-sub">棋盘 <span id="mines-size">9 × 9</span> · 左键揭开，右键插旗</p>
+                </div>
+                <select id="mines-difficulty" class="mines-diff-select">
+                  <option value="easy" selected>初级</option>
+                  <option value="medium">中级</option>
+                  <option value="hard">高级</option>
+                </select>
+              </div>
+
+              <!-- HUD -->
+              <div class="mines-hud">
+                <div class="hud-left">
+                  <span class="hud-item">💣 <strong id="mines-left">010</strong></span>
+                  <span class="hud-item">🚩 <strong id="mines-flags">0</strong></span>
+                </div>
+                <button class="mine-face" id="mine-face" title="重新开始">
+                  <span id="mine-face-glyph">☺</span>
+                </button>
+                <div class="hud-right">
+                  <span class="hud-item">⏱ <strong id="mines-timer">000</strong></span>
+                </div>
+              </div>
+
+              <!-- 棋盘 -->
+              <div class="mines-board-card">
+                <div id="minefield" class="mines-grid" role="grid" aria-label="扫雷棋盘"></div>
+                <div class="pause-overlay" id="mines-pause-overlay" hidden>
+                  <div class="pause-card">
+                    <span class="pause-symbol" aria-hidden="true">Ⅱ</span>
+                    <h2>暂停一下</h2>
+                    <p>休息好了，继续排雷。</p>
+                    <button class="primary-button" id="mines-resume-button" type="button">继续游戏</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 底部操作 -->
+              <div class="mines-actions">
+                <button id="mines-new-button" class="action-btn">＋ 新游戏</button>
+                <button id="mines-restart-button" class="action-btn">↻ 重开</button>
+                <button id="mines-help" class="action-btn">? 帮助</button>
+                <button id="mines-pause-button" class="action-btn" aria-pressed="false">Ⅱ 暂停</button>
+              </div>
+
+              <!-- 提示文字 -->
+              <p id="mines-objective-caption" class="mines-caption">
+                左键揭开，右键插旗。第一下永远安全。
+              </p>
+
+              <!-- 最佳记录 -->
+              <div class="mines-records">
+                最佳：初级 <strong id="mine-record-easy">—</strong> · 中级 <strong id="mine-record-medium">—</strong> · 高级 <strong id="mine-record-hard">—</strong>
+              </div>
+
+              <!-- 规则 -->
+              <div class="mines-rules">
+                <h3>规则</h3>
+                <ul>
+                  <li>数字表示周围 8 格中有多少颗雷</li>
+                  <li>右键插旗标记你认为有雷的位置</li>
+                  <li>数字格上的旗数吻合时，按空格自动揭开周围</li>
+                  <li>第一次点击绝对安全</li>
+                </ul>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <footer class="page-footer">
+        <span>给自己一点安静的时间。</span>
+        <span>数独 · 扫雷 · 离线可玩</span>
+      </footer>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+    <dialog class="info-dialog" id="info-dialog" aria-labelledby="dialog-title">
+      <button class="dialog-close" id="dialog-close" type="button" aria-label="关闭">×</button>
+      <div class="dialog-mark" aria-hidden="true">✦</div>
+      <h2 id="dialog-title">怎么玩</h2>
+      <p>选择空格，再点下方数字即可填入。开启笔记后，数字会作为候选记号显示。</p>
+      <ul><li>同行、同列或同宫的重复数字会标红。</li><li>提示会填入一个正确数字，并标记本局使用过提示。</li><li>游戏进度会自动保存在当前浏览器。</li></ul>
+      <button class="primary-button dialog-ok" id="dialog-ok" type="button">知道了</button>
+    </dialog>
+    <dialog class="win-dialog" id="win-dialog" aria-labelledby="win-title">
+      <div class="win-sparkle" aria-hidden="true">✦</div><p class="eyebrow">太棒了</p><h2 id="win-title">完成这一局</h2><p class="win-copy">你用 <strong id="win-time">00:00</strong> 解开了今天的谜题。</p>
+      <button class="primary-button" id="win-new-game" type="button">再来一局</button>
+    </dialog>
+
+    <!-- 切换逻辑 -->
+    <script type="module">
+      const tabs = document.querySelectorAll('.game-tab');
+      const views = document.querySelectorAll('.game-view');
+      const indicator = document.querySelector('.tab-indicator');
+
+      function switchGame(game) {
+        tabs.forEach(t => {
+          const active = t.dataset.game === game;
+          t.classList.toggle('active', active);
+          t.setAttribute('aria-selected', active);
+        });
+        views.forEach(v => {
+          const isMines = v.id === 'view-mines';
+          const show = (game === 'mines') === isMines;
+          v.classList.toggle('active', show);
+          v.hidden = !show;
+        });
+        const activeTab = document.querySelector(`.game-tab[data-game="${game}"]`);
+        if (activeTab && indicator) {
+          indicator.style.left = activeTab.offsetLeft + 'px';
+          indicator.style.width = activeTab.offsetWidth + 'px';
+        }
+        if (game === 'mines') {
+          requestAnimationFrame(() => {
+            if (window.minesApp && typeof window.minesApp.activate === 'function') {
+              window.minesApp.activate();
+            }
+          });
+        } else {
+          if (window.minesApp && typeof window.minesApp.deactivate === 'function') {
+            window.minesApp.deactivate();
+          }
+        }
+      }
+
+      tabs.forEach(tab => tab.addEventListener('click', () => switchGame(tab.dataset.game)));
+
+      window.addEventListener('load', () => {
+        const activeTab = document.querySelector('.game-tab.active');
+        if (activeTab && indicator) {
+          indicator.style.left = activeTab.offsetLeft + 'px';
+          indicator.style.width = activeTab.offsetWidth + 'px';
+        }
+      });
+    </script>
+
+    <style>
+      /* 标签栏 */
+      .game-tabs {
+        position: relative; display: inline-flex;
+        background: var(--surface-2, #181c18); border-radius: 10px; padding: 3px; gap: 2px;
+      }
+      .game-tab {
+        position: relative; z-index: 1; padding: 7px 14px; border: none; border-radius: 8px;
+        background: transparent; color: var(--text-muted, #6b726b);
+        font-size: 13px; font-weight: 600; cursor: pointer; transition: color .2s;
+      }
+      .game-tab.active { color: var(--accent, #5cc48a); }
+      .tab-indicator {
+        position: absolute; top: 3px; bottom: 3px; background: var(--surface, #121612);
+        border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.1);
+        transition: left .25s, width .25s; z-index: 0;
+      }
+      .views-container { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+      .game-view { flex: 1; display: none; }
+      .game-view.active { display: flex; }
+      .game-center {
+        width: 100%; display: flex; justify-content: center; align-items: flex-start;
+        padding: 24px 16px; box-sizing: border-box;
+      }
+      .game-center .layout { width: 100%; justify-content: center; }
+
+      /* 扫雷布局 */
+      .mine-center { max-width: 100%; }
+      .mine-center .mines-wrap {
+        width: 100%; max-width: 440px; margin: 0 auto;
+        display: flex; flex-direction: column; align-items: center;
+      }
+      .mines-top {
+        display: flex; justify-content: space-between; align-items: flex-start;
+        width: 100%; margin-bottom: 12px;
+      }
+      .mines-title-area .eyebrow { font-size: 11px; color: var(--text-muted, #6b726b); margin: 0; }
+      .mines-main-title { font-size: 22px; font-weight: 800; color: var(--accent, #5cc48a); margin: 2px 0; }
+      .mines-sub { font-size: 12px; color: var(--text-muted, #6b726b); margin: 0; }
+      .mines-diff-select {
+        padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border, #333);
+        background: var(--surface-2, #181c18); color: var(--text, #e0e0e0); font-size: 13px;
+      }
+      .mines-hud {
+        display: flex; align-items: center; gap: 16px;
+        background: var(--surface, #121612); border: 1px solid var(--border, #333);
+        border-radius: 8px; padding: 8px 14px; margin-bottom: 12px;
+      }
+      .hud-left, .hud-right { display: flex; gap: 12px; }
+      .hud-item { font-size: 14px; font-weight: 700; }
+      .mine-face {
+        width: 36px; height: 36px; border-radius: 6px; border: 2px solid;
+        border-color: #fff #808080 #808080 #fff; background: #c0c0c0;
+        display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 20px;
+      }
+      .mines-actions { display: flex; gap: 8px; margin: 10px 0; flex-wrap: wrap; justify-content: center; }
+      .action-btn {
+        padding: 5px 10px; border-radius: 5px; border: 1px solid var(--border, #333);
+        background: var(--surface-2, #181c18); color: var(--text, #e0e0e0); font-size: 12px; cursor: pointer;
+      }
+      .mines-caption { font-size: 12px; color: var(--text-muted, #6b726b); margin: 6px 0; text-align: center; }
+      .mines-records { font-size: 11px; color: var(--text-muted, #6b726b); margin: 4px 0; }
+      .mines-rules { margin-top: 16px; font-size: 12px; color: var(--text-muted, #6b726b); }
+      .mines-rules h3 { font-size: 13px; color: var(--text, #e0e0e0); margin-bottom: 6px; }
+      .mines-rules ul { padding-left: 18px; line-height: 1.7; margin: 0; }
+
+      /* ===== 棋盘核心样式 ===== */
+      #minefield {
+        display: grid !important;
+        grid-template-columns: repeat(var(--cols, 9), 1fr);
+        gap: 1px;
+        background: #555;
+        border: 2px solid #777;
+        padding: 2px;
+        margin: 0 auto;
+      }
+      .mcell {
+        width: clamp(28px, 6vw, 36px);
+        height: clamp(28px, 6vw, 36px);
+        aspect-ratio: 1 / 1;
+        display: flex; align-items: center; justify-content: center;
+        background: #c0c0c0;
+        border: 2px solid;
+        border-color: #fff #808080 #808080 #fff;
+        font-size: clamp(13px, 3vw, 17px);
+        font-weight: 800;
+        color: #1a1a1a;
+        cursor: pointer;
+        user-select: none;
+        box-sizing: border-box;
+      }
+      .mcell.open {
+        background: #dcdcdc;
+        border: 1px solid #b0b0b0;
+      }
+      .mcell.flag { background: #c0c0c0; }
+      .mcell.mine { background: #e5484d; }
+      .mcell.boom { background: #ff0000; }
+      .mcell.cursor { outline: 2px solid var(--accent, #5cc48a); outline-offset: -2px; }
+      .mnum { pointer-events: none; }
+    </style>
+  </body>
+</html>

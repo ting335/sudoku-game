@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<title>音乐波形验收</title>
+<h1>音乐波形验收</h1>
+<p>使用浏览器 OfflineAudioContext 渲染真实合成波形，验证默认 35% 音量下的信号。此页面不测试扬声器或系统静音。</p>
+<button id="run">验证音乐波形</button>
+<pre id="result" role="status">等待验证</pre>
+<script type="module">
+const result = document.querySelector('#result');
+document.querySelector('#run').addEventListener('click', async () => {
+  const originalContext = window.AudioContext;
+  const saved = localStorage.getItem('sudoku-audio-v1');
+  let audio;
+  try {
+    const offline = new OfflineAudioContext(1, 44100 * 6, 44100);
+    window.AudioContext = class {
+      get currentTime() { return offline.currentTime; }
+      get destination() { return offline.destination; }
+      get state() { return 'running'; }
+      createGain() { return offline.createGain(); }
+      createOscillator() { return offline.createOscillator(); }
+    };
+    ({ audio } = await import('../src/audio.js?v=20261029-waveform'));
+    audio.setVolume(35);
+    await audio.setMusicEnabled(true);
+    const buffer = await offline.startRendering();
+    const samples = buffer.getChannelData(0);
+    let squares = 0, peak = 0;
+    for (const sample of samples) { squares += sample * sample; peak = Math.max(peak, Math.abs(sample)); }
+    const rms = Math.sqrt(squares / samples.length);
+    const firstSound = samples.findIndex(sample => Math.abs(sample) > 0.001) / buffer.sampleRate;
+    const pass = rms > 0.005 && peak < 1 && firstSound >= 0 && firstSound < 0.3;
+    result.textContent = `${pass ? 'PASS' : 'FAIL'}\nRMS=${rms.toFixed(5)}\nPeak=${peak.toFixed(5)}\n首次有效信号=${firstSound.toFixed(3)} 秒`;
+  } catch (error) {
+    result.textContent = `FAIL: ${error.message}`;
+  } finally {
+    audio?.setPaused(true);
+    window.AudioContext = originalContext;
+    if (saved === null) localStorage.removeItem('sudoku-audio-v1'); else localStorage.setItem('sudoku-audio-v1', saved);
+  }
+});
+</script>
+</html>
