@@ -16,8 +16,8 @@
         document.documentElement.setAttribute('data-theme', t);
       })();
     </script>
-    <link rel="stylesheet" href="./src/styles.css?v=20261102-mines-legend">
-    <script type="module" src="./src/main.js?v=20261102-teach"></script>
+    <link rel="stylesheet" href="./src/styles.css?v=20261102-compact">
+    <script type="module" src="./src/main.js?v=20261102-compact"></script>
 
   </head>
   <body>
@@ -62,11 +62,11 @@
                   <div class="side-card-heading"><span class="side-icon rules-icon">⌗</span><h2>数独规则</h2></div>
                   <p>在空格填入 <strong>1–9</strong>，让每一行、每一列和每个 3×3 宫都不重复。</p>
                   <p id="diagonal-rule" class="diagonal-rule-text" style="display:none;">✦ <strong>对角线模式</strong>：两条对角线上的数字也不能重复。</p>
-                  <div class="rule-example" aria-label="每行、每列、每宫、对角线不重复">
-                    <span>每行</span><i>↔</i><span>每列</span><i>↕</i><span>每宫</span><i>✦</i><span>对角线</span>
+                  <p id="even-rule" class="even-rule-text" hidden>◯ <strong>偶数模式</strong>：圆圈标记格只能填写 2、4、6、8，可与对角线模式叠加。</p>
+                  <div class="rule-example" aria-label="每行、每列、每宫不重复">
+                    <span>每行</span><i>↔</i><span>每列</span><i>↕</i><span>每宫</span>
                   </div>
                 </section>
-                <p id="even-rule" class="even-rule-text" hidden>◯ 偶数规则：圆圈标记格只能填写 2、4、6、8。可与对角线模式叠加。</p>
                 <section class="side-card record-card">
                   <div class="side-card-heading"><span class="side-icon record-icon">⌁</span><h2>今日记录</h2></div>
                   <div class="record-row"><span>完成局数</span><strong id="completed-count">0</strong></div>
@@ -249,16 +249,20 @@
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
-    <dialog class="info-dialog help-dialog" id="info-dialog" aria-labelledby="dialog-title" aria-describedby="sudoku-help-lead">
+    <dialog class="info-dialog help-dialog compact-sudoku-help" id="info-dialog" aria-labelledby="dialog-title" aria-describedby="sudoku-help-lead">
       <header class="help-header"><div><span class="help-kicker">新手入门 · 数独</span><h2 id="dialog-title" tabindex="-1" autofocus>第一次玩？从这里开始</h2></div><button class="dialog-close" data-help-close type="button" aria-label="关闭数独玩法说明">×</button></header>
-      <div class="help-content">
-        <p class="help-lead" id="sudoku-help-lead">不需要计算，也不用猜大小。观察已有数字，把空格补完整就可以。</p>
-        <section class="help-section"><h3><b>1</b> 先认识棋盘</h3><p>棋盘有 <strong>9 行 × 9 列，共 81 格</strong>。横着看是一行，竖着看是一列；粗线围起来的 <strong>3 × 3 小方块叫“一宫”</strong>，一共有 9 宫。开局给出的数字是线索，不能修改。</p></section>
-        <section class="help-section"><h3><b>2</b> 记住三条规则</h3><div class="help-rule-cards"><article><span aria-hidden="true">↔</span><h4>每一行</h4><p>横向 9 格，填入 1–9，不能重复。</p></article><article><span aria-hidden="true">↕</span><h4>每一列</h4><p>纵向 9 格，填入 1–9，不能重复。</p></article><article><span aria-hidden="true">▦</span><h4>每一宫</h4><p>粗线内 3 × 3 格，1–9 各出现一次。</p></article></div><p><strong>三个条件要同时满足。</strong>填满全部空格，并符合当前规则，就完成了这一局。</p></section>
-        <section class="help-section help-example"><h3><b>3</b> 看一个最简单的例子</h3><p>假设这一行只剩一个空格：</p><div class="help-number-example" role="img" aria-label="一行数字 1、2、3、4、空格、6、7、8、9，缺少数字 5"><span>1</span><span>2</span><span>3</span><span>4</span><span class="missing">?</span><span>6</span><span>7</span><span>8</span><span>9</span></div><p>1–9 里面只缺 <strong>5</strong>，所以这里应填 5。实际做题时，还要检查这个位置所在的<strong>列和宫</strong>；若有矛盾，先检查之前填写的数字。</p></section>
-        <section class="help-section"><h3><b>4</b> 在这个游戏里怎么操作</h3><ol><li><strong>先点空格，再点下方 1–9</strong>，或直接按键盘数字键。方向键可以移动选择。</li><li>填错时会标红、轻微抖动，并可播放错误音。点<strong>“擦除”</strong>或按 Delete / Backspace 清除；普通填数可撤销、重做。</li><li>卡住了点<strong>“提示”</strong>：先看候选数，再找唯一位置，最后尝试填入一个确定数字。候选数是可能的选择，不等于每个都是答案。</li><li>想休息就点暂停。未完成局面会保存在当前浏览器；清理站点数据或换设备不会自动同步。</li></ol><p class="help-note">建议第一次选择“初级”，先关闭“对角线”和“偶数”。手动笔记编辑仍在完善，查看候选数请使用“提示 → 显示候选数”。</p></section>
-        <details class="help-extra"><summary>学会基础后：对角线与偶数规则是什么？</summary><p><strong>对角线：</strong>除行、列、宫之外，两条主对角线也要各含 1–9，不能重复。<strong>偶数：</strong>圆圈标记格只允许 2、4、6、8；没有圆圈的格子仍遵守普通规则。两种附加规则可同时开启，切换时会开始新局。</p></details>
-        <p class="help-return">以后忘记规则，点页面右上角的 <strong>“? 玩法说明”</strong>，随时回来查看。</p>
+      <div class="help-content help-compact">
+        <p class="help-lead" id="sudoku-help-lead">把 9 × 9 棋盘的空格填满。<strong>只填 1–9，开局给出的数字不能修改。</strong></p>
+        <div class="help-rule-cards">
+          <article><span aria-hidden="true">↔</span><h4>每一行</h4><p>横向 9 格，1–9 各一次。</p></article>
+          <article><span aria-hidden="true">↕</span><h4>每一列</h4><p>纵向 9 格，1–9 各一次。</p></article>
+          <article><span class="help-box-grid" role="img" aria-label="一宫是三行三列的九个小方格"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><h4>每一宫 · 3 × 3</h4><p>粗线围成的九格，1–9 各一次。</p></article>
+        </div>
+        <p class="help-compact-rule"><strong>行、列、宫三个条件，要同时满足。</strong></p>
+        <div class="help-compact-example"><span>例如一行只缺 5：</span><div class="help-number-example" role="img" aria-label="一行 1、2、3、4、5、6、7、8、9，其中 5 是需要填的数字"><span>1</span><span>2</span><span>3</span><span>4</span><span class="missing">5</span><span>6</span><span>7</span><span>8</span><span>9</span></div></div>
+        <p><strong>怎么填：</strong>点空格 → 点数字或按 1–9。填错会标红，用“擦除”清除。</p>
+        <p><strong>不会做：</strong>点“提示”看候选数；想休息点“暂停”。首次建议选初级，关闭附加规则。</p>
+        <details class="help-extra"><summary>更多操作与附加规则</summary><p>横着是一行，竖着是一列，整个棋盘有 9 宫。例子中的 5 也要符合所在的列和宫；若有矛盾，先检查之前的输入。方向键移动，Delete / Backspace 擦除，普通填数可撤销、重做。</p><p>三级提示依次为候选数、唯一位置、填入一个确定数字。候选数不是确定答案；手动笔记仍在完善，查看候选请用一级提示。</p><p><strong>对角线：</strong>两条主对角线也各含 1–9，不重复。<strong>偶数：</strong>圆圈格只允许 2、4、6、8。可组合开启，切换会开始新局。进度只保存在当前浏览器，不跨设备同步。</p></details>
       </div>
       <footer class="help-footer"><label><input type="checkbox" data-help-hide> 下次进入数独不再自动显示</label><button class="primary-button" data-help-close type="button">明白了，开始数独</button></footer>
     </dialog>
@@ -281,7 +285,7 @@
     </dialog>
     <!-- 切换逻辑 -->
     <script type="module">
-      import { minesApp } from './src/minesUI.js?v=20261102-mines-legend';
+      import { minesApp } from './src/minesUI.js?v=20261102-compact';
       const tabs = document.querySelectorAll('.game-tab');
       const views = document.querySelectorAll('.game-view');
       const indicator = document.querySelector('.tab-indicator');

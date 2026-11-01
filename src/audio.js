@@ -20,6 +20,7 @@ let paused = false;
 let unlocked = false;
 let playbackError = '';
 let chordIndex = 0;
+let scene = 'sudoku';
 const musicVoices = new Set();
 const chords = [
   [130.81, 196, 261.63, 329.63],
@@ -103,6 +104,17 @@ function voice(freq, type, start, duration, level, bus, attack = 0.012, music = 
 function scheduleChord() {
   if (!settings.music || paused || !unlocked) return;
   const start = context.currentTime + 0.04;
+  if (scene === 'mines') {
+    // A restrained minor-key pulse gives minesweeper suspense without alarms
+    // or sudden volume changes. All notes use the shared music bus and mute.
+    const pattern = [220, 261.63, 329.63, 246.94, 220, 293.66, 261.63, 164.81];
+    for (let beat = 0; beat < 16; beat++) {
+      voice(pattern[beat % pattern.length], 'triangle', start + beat * 0.5, 0.36, 0.12, musicBus, 0.025, true);
+      if (beat % 2 === 0) voice(55, 'sine', start + beat * 0.5, 0.28, 0.18, musicBus, 0.025, true);
+    }
+    [110, 164.81].forEach(freq => voice(freq, 'sine', start, 7.9, 0.07, musicBus, 0.5, true));
+    return;
+  }
   const chord = chords[chordIndex++ % chords.length];
   // Slow sine pads with a sparse pentatonic melody: no downloaded recordings.
   chord.slice(0, 3).forEach((freq, i) => voice(freq, 'sine', start + i * 0.05, 8.4, 0.19, musicBus, 0.65, true));
@@ -179,7 +191,16 @@ export const sfx = {
 
 export const audio = {
   unlock,
-  getSettings: () => ({ ...settings, supported: !!(globalThis.AudioContext || globalThis.webkitAudioContext), unlocked, paused, playing: !!musicTimer && !paused && context?.state === 'running', playbackError }),
+  getSettings: () => ({ ...settings, scene, supported: !!(globalThis.AudioContext || globalThis.webkitAudioContext), unlocked, paused, playing: !!musicTimer && !paused && context?.state === 'running', playbackError }),
+  setScene(value) {
+    const next = value === 'mines' ? 'mines' : 'sudoku';
+    if (next === scene) return;
+    stopMusic();
+    scene = next;
+    chordIndex = 0;
+    startMusic();
+    notify();
+  },
   async setMusicEnabled(enabled) {
     settings.music = !!enabled;
     if (!settings.music) stopMusic();

@@ -5,7 +5,7 @@
 // 逻辑完全独立，不依赖数独的 state / DOM。
 // ============================================================
 
-import { sfx, audio } from './audio.js?v=20261031-dual';
+import { sfx, audio } from './audio.js?v=20261102-atmosphere';
 
 const SAVE_KEY = 'minesweeper-progress-v1';
 const RECORD_KEY = 'minesweeper-record-v1';

@@ -4,7 +4,7 @@
 // ============================================================
 
 import { Minesweeper, PRESETS, formatTime, COUNT_COLOR, MINE_CELL } from './minesweeper.js?v=20261031-dual';
-import { audio } from './audio.js?v=20261031-dual';
+import { audio } from './audio.js?v=20261102-atmosphere';
 
 const $ = id => document.getElementById(id);
 
@@ -221,6 +221,8 @@ export const minesApp = {
   id: 'mines',
   label: '扫雷',
   activate() {
+    audio.setPaused(true);
+    audio.setScene('mines');
     active = true;
     if (!game || game.over || !game.firstMove) resume();
     else render();
@@ -229,6 +231,7 @@ export const minesApp = {
   deactivate() {
     active = false;
     audio.setPaused(true);
+    audio.setScene('sudoku');
     if (game) game.setPaused(true);
   },
   start,
@@ -285,7 +288,7 @@ requestAnimationFrame(() => {
       : !prefs.volume ? '当前已静音。'
       : prefs.music && prefs.paused ? '已暂停，继续游戏后恢复音乐。'
       : prefs.music && prefs.playbackError ? prefs.playbackError
-      : prefs.playing ? '正在播放舒缓音乐。' : prefs.music ? '点击棋盘或“点击恢复”启用声音。' : '点击“播放音乐”，让排雷也安静下来。';
+      : prefs.playing ? '正在播放紧张氛围音乐。' : prefs.music ? '点击棋盘或“点击恢复”启用声音。' : '点击“播放音乐”，开启排雷的紧张氛围。';
   };
   $('mines-music-button')?.addEventListener('click', () => {
     const prefs = audio.getSettings();

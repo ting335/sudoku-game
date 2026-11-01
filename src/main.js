@@ -7,7 +7,7 @@
 
 import { setupHelp } from './help.js?v=20261102-teach';
 import { makeEvenCells, evenAllows } from './core/even.js';
-import { sfx, audio } from './audio.js?v=20261031-dual';
+import { sfx, audio } from './audio.js?v=20261102-atmosphere';
 import { showCandidates, highlightUniqueLocation, fillOneCorrect } from './hint.js?v=20261031-layout';
 
 // ---------- 工具函数 ----------
@@ -270,7 +270,10 @@ function init() {
 
 function updateDiagonalRuleVisibility() {
   if (diagonalRule) diagonalRule.style.display = state.diagonalMode ? 'block' : 'none';
-  if (diagonalToggle) diagonalToggle.setAttribute('aria-pressed', String(state.diagonalMode));
+  if (diagonalToggle) {
+    diagonalToggle.setAttribute('aria-pressed', String(state.diagonalMode));
+    diagonalToggle.title = state.diagonalMode ? '关闭对角线模式' : '开启对角线模式';
+  }
   window.__sudokuDiagonalMode = state.diagonalMode;
   window.__sudokuEvenCells = state.evenMode ? state.evenCells : [];
   $('even-toggle')?.setAttribute('aria-pressed', String(state.evenMode));

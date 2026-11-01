@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 function audioEnvironment(t, { denied = false, unavailable = false, saved = null } = {}) {
   const stats = { contexts: 0, oscillators: [], intervals: new Set(), saved: null };
-  const parameter = () => ({ value: 0, setValueAtTime() {}, linearRampToValueAtTime() {}, exponentialRampToValueAtTime() {}, cancelScheduledValues() {}, setTargetAtTime() {} });
+  const parameter = () => ({ value: 0, setValueAtTime(value) { this.value=value; }, linearRampToValueAtTime() {}, exponentialRampToValueAtTime() {}, cancelScheduledValues() {}, setTargetAtTime() {} });
   class FakeContext {
     constructor() { stats.contexts++; stats.instance = this; this.currentTime = 0; this.state = 'suspended'; this.destination = {}; }
     async resume() { if (denied) throw new Error('gesture required'); this.state = 'running'; }
@@ -27,6 +27,27 @@ function audioEnvironment(t, { denied = false, unavailable = false, saved = null
   }));
   return stats;
 }
+
+test('game music switches to a minor pulse without duplicating contexts, loops or preferences', async t => {
+  const stats = audioEnvironment(t);
+  const { audio } = await import('../src/audio.js?scene-switch');
+  await audio.setMusicEnabled(true);
+  assert.equal(stats.oscillators.length,6);
+  audio.setScene('mines');
+  assert.equal(audio.getSettings().scene,'mines');
+  assert.equal(stats.oscillators.length,32); // 6 calm + 26 tension voices.
+  assert.equal(stats.oscillators[6].type,'triangle');
+  assert.equal(stats.oscillators[6].frequency.value,220);
+  assert.equal(stats.intervals.size,1);
+  audio.setScene('mines'); assert.equal(stats.oscillators.length,32);
+  audio.setScene('sudoku'); assert.equal(stats.oscillators.length,38);
+  assert.equal(stats.contexts,1); assert.equal(stats.intervals.size,1);
+  assert.equal(audio.getSettings().volume,35);
+  audio.setPaused(true); audio.setScene('mines');
+  assert.equal(stats.oscillators.length,38); assert.equal(stats.intervals.size,0);
+  await audio.setMusicEnabled(false); audio.setPaused(false); audio.setScene('sudoku');
+  assert.equal(stats.oscillators.length,38); assert.equal(stats.intervals.size,0);
+});
 
 test('effects reuse one context, use distinct notes, and respect the sound switch', async t => {
   const stats = audioEnvironment(t);

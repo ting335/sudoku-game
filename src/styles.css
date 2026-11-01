@@ -438,7 +438,7 @@ html[data-theme="dark"] .win-dialog h2 { color: var(--accent-dark); }
   transition: transform .2s ease;
 }
 .mode-toggle[aria-pressed="true"] .mode-icon {
-  transform: rotate(45deg);
+  transform: none;
 }
 
 /* ===== 规则文字 ===== */
@@ -685,6 +685,31 @@ h1 { margin: 0; font-size: 29px; line-height: 1.15; }
 .help-dialog h2 { margin: 6px 0 0; font-size: clamp(24px, 3vw, 30px); line-height: 1.35; color: var(--text); }
 .help-dialog h2:focus { outline: none; }
 .help-header::after { content: '向下滚动查看完整教学 · 底部按钮可随时开始'; display: block; margin-top: 8px; color: var(--text-soft); font-size: 14px; line-height: 1.5; }
+.compact-sudoku-help .help-header { padding-top: 18px; padding-bottom: 14px; }
+.compact-sudoku-help .help-header::after { content: '三个规则，一眼看懂 · 详细操作可按需展开'; margin-top: 5px; }
+.compact-sudoku-help .help-footer { padding-top: 12px; padding-bottom: 12px; }
+.help-compact { padding-top: 0; padding-bottom: 12px; }
+.help-compact p { margin: 9px 0; line-height: 1.65; }
+.help-compact .help-lead { margin: 12px 0; }
+.help-compact .help-rule-cards article { padding: 12px; }
+.help-compact .help-rule-cards article > span { display: inline-flex; height: 28px; align-items: center; }
+.help-compact .help-rule-cards h4 { margin: 5px 0; }
+.help-compact .help-rule-cards p { font-size: 15px; margin: 0; }
+.help-compact .help-extra { margin-top: 10px; padding: 9px 12px; }
+.help-compact .help-number-example { margin: 7px 0; }
+.help-compact .help-number-example > span { min-height: 32px; font-size: 21px; }
+.help-compact-example { display: flex; align-items: center; gap: 14px; color: var(--text-soft); font-size: 15px; }
+.help-compact-example .help-number-example { flex: 1; }
+.help-compact .help-rule-cards .help-box-grid { display: inline-grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); width: 28px; height: 28px; border: 2px solid var(--accent); gap: 0; }
+.help-box-grid i { width: 100%; height: 100%; border: .5px solid var(--accent); }
+@media (max-width: 560px) {
+  .help-compact .help-rule-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .help-compact .help-rule-cards article { padding: 8px; }
+  .help-compact .help-rule-cards article > span { float: none; }
+  .help-compact .help-rule-cards h4 { font-size: 15px; }
+  .help-compact .help-rule-cards p { font-size: 14px; }
+  .help-compact-example { display: block; }
+}
 .help-dialog .dialog-close { width: 40px; height: 40px; top: 22px; right: 20px; color: var(--text-soft); }
 .help-content { min-height: 0; padding: 10px 28px 22px; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
 .help-dialog p, .help-dialog li { font-size: 16px; line-height: 1.85; color: var(--text-soft); }
@@ -761,3 +786,8 @@ h1 { margin: 0; font-size: 29px; line-height: 1.15; }
   .digit-button { height: 32px; font-size: 16px; }
   .keyboard-hint { font-size: 8px; }
 }
+
+/* Variant rules belong to the same rule card; selection does not rotate its icon. */
+.rules-card .even-rule-text { margin: 9px 0; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--text-soft); font-size: 14px; line-height: 1.75; }
+.rules-card .even-rule-text strong { color: var(--accent); }
+.mode-toggle .mode-icon, .mode-toggle[aria-pressed="true"] .mode-icon { transform: none; transition: none; }
