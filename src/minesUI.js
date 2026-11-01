@@ -73,7 +73,7 @@ function render() {
       } else if (over && game.mines[i]) {
         // 结算时露出所有雷；误标的旗单独区分
         cell.classList.add('mine');
-        cell.setAttribute('aria-label', `${r+1} 行 ${c+1} 列，结算显示的地雷，未踩中`);
+        cell.setAttribute('aria-label', `${r+1} 行 ${c+1} 列，结算显示的未插旗地雷`);
         cell.textContent = board[i] === MINE_CELL.FLAG ? '🚩' : '◈';
         if (board[i] === MINE_CELL.FLAG) cell.classList.add('flag-was-right');
       } else if (game.mines[i] && won) {
