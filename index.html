@@ -16,8 +16,8 @@
         document.documentElement.setAttribute('data-theme', t);
       })();
     </script>
-    <link rel="stylesheet" href="./src/styles.css?v=20261031-dual">
-    <script type="module" src="./src/main.js?v=20261031-dual"></script>
+    <link rel="stylesheet" href="./src/styles.css?v=20261102-teach">
+    <script type="module" src="./src/main.js?v=20261102-teach"></script>
 
   </head>
   <body>
@@ -41,7 +41,7 @@
         <div class="topbar-right">
           <span class="offline-label"><span class="status-dot"></span>本地游戏</span>
           <button class="icon-button" id="theme-button" type="button" aria-label="切换主题" title="切换主题">🌓</button>
-          <button class="icon-button" id="help-button" type="button" aria-label="查看游戏说明" title="游戏说明">?</button>
+          <button class="help-entry" id="help-button" type="button" aria-label="玩法说明：随时查看新手教学" title="查看当前游戏的规则与操作"><span aria-hidden="true">?</span> 玩法说明</button>
         </div>
       </header>
 
@@ -259,29 +259,38 @@
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
-    <dialog class="info-dialog" id="info-dialog" aria-labelledby="dialog-title">
-      <button class="dialog-close" id="dialog-close" type="button" aria-label="关闭">×</button>
-      <div class="dialog-mark" aria-hidden="true">✦</div>
-      <h2 id="dialog-title">怎么玩</h2>
-      <p>选择空格，再点下方数字即可填入。开启笔记后，数字会作为候选记号显示。</p>
-      <ul><li>同行、同列或同宫的重复数字会标红。</li><li>提示会填入一个正确数字，并标记本局使用过提示。</li><li>游戏进度会自动保存在当前浏览器。</li></ul>
-      <button class="primary-button dialog-ok" id="dialog-ok" type="button">知道了</button>
+    <dialog class="info-dialog help-dialog" id="info-dialog" aria-labelledby="dialog-title" aria-describedby="sudoku-help-lead">
+      <header class="help-header"><div><span class="help-kicker">新手入门 · 数独</span><h2 id="dialog-title" tabindex="-1" autofocus>第一次玩？从这里开始</h2></div><button class="dialog-close" data-help-close type="button" aria-label="关闭数独玩法说明">×</button></header>
+      <div class="help-content">
+        <p class="help-lead" id="sudoku-help-lead">不需要计算，也不用猜大小。观察已有数字，把空格补完整就可以。</p>
+        <section class="help-section"><h3><b>1</b> 先认识棋盘</h3><p>棋盘有 <strong>9 行 × 9 列，共 81 格</strong>。横着看是一行，竖着看是一列；粗线围起来的 <strong>3 × 3 小方块叫“一宫”</strong>，一共有 9 宫。开局给出的数字是线索，不能修改。</p></section>
+        <section class="help-section"><h3><b>2</b> 记住三条规则</h3><div class="help-rule-cards"><article><span aria-hidden="true">↔</span><h4>每一行</h4><p>横向 9 格，填入 1–9，不能重复。</p></article><article><span aria-hidden="true">↕</span><h4>每一列</h4><p>纵向 9 格，填入 1–9，不能重复。</p></article><article><span aria-hidden="true">▦</span><h4>每一宫</h4><p>粗线内 3 × 3 格，1–9 各出现一次。</p></article></div><p><strong>三个条件要同时满足。</strong>填满全部空格，并符合当前规则，就完成了这一局。</p></section>
+        <section class="help-section help-example"><h3><b>3</b> 看一个最简单的例子</h3><p>假设这一行只剩一个空格：</p><div class="help-number-example" role="img" aria-label="一行数字 1、2、3、4、空格、6、7、8、9，缺少数字 5"><span>1</span><span>2</span><span>3</span><span>4</span><span class="missing">?</span><span>6</span><span>7</span><span>8</span><span>9</span></div><p>1–9 里面只缺 <strong>5</strong>，所以这里应填 5。实际做题时，还要检查这个位置所在的<strong>列和宫</strong>；若有矛盾，先检查之前填写的数字。</p></section>
+        <section class="help-section"><h3><b>4</b> 在这个游戏里怎么操作</h3><ol><li><strong>先点空格，再点下方 1–9</strong>，或直接按键盘数字键。方向键可以移动选择。</li><li>填错时会标红、轻微抖动，并可播放错误音。点<strong>“擦除”</strong>或按 Delete / Backspace 清除；普通填数可撤销、重做。</li><li>卡住了点<strong>“提示”</strong>：先看候选数，再找唯一位置，最后尝试填入一个确定数字。候选数是可能的选择，不等于每个都是答案。</li><li>想休息就点暂停。未完成局面会保存在当前浏览器；清理站点数据或换设备不会自动同步。</li></ol><p class="help-note">建议第一次选择“初级”，先关闭“对角线”和“偶数”。手动笔记编辑仍在完善，查看候选数请使用“提示 → 显示候选数”。</p></section>
+        <details class="help-extra"><summary>学会基础后：对角线与偶数规则是什么？</summary><p><strong>对角线：</strong>除行、列、宫之外，两条主对角线也要各含 1–9，不能重复。<strong>偶数：</strong>圆圈标记格只允许 2、4、6、8；没有圆圈的格子仍遵守普通规则。两种附加规则可同时开启，切换时会开始新局。</p></details>
+        <p class="help-return">以后忘记规则，点页面右上角的 <strong>“? 玩法说明”</strong>，随时回来查看。</p>
+      </div>
+      <footer class="help-footer"><label><input type="checkbox" data-help-hide> 下次进入数独不再自动显示</label><button class="primary-button" data-help-close type="button">明白了，开始数独</button></footer>
     </dialog>
     <dialog class="win-dialog" id="win-dialog" aria-labelledby="win-title">
       <div class="win-sparkle" aria-hidden="true">✦</div><p class="eyebrow">太棒了</p><h2 id="win-title">完成这一局</h2><p class="win-copy">你用 <strong id="win-time">00:00</strong> 解开了今天的谜题。</p>
       <button class="primary-button" id="win-new-game" type="button">再来一局</button>
     </dialog>
 
-    <dialog class="info-dialog" id="mines-help-dialog" aria-labelledby="mines-help-title">
-      <h2 id="mines-help-title">扫雷怎么玩</h2>
-      <p>揭开所有非雷格即可获胜。数字表示周围八格的雷数；首次揭开及其周围八格不布雷。</p>
-      <p>右键循环切换旗帜、问号、空格。手机可开启“插旗模式”，再点格子标记。已揭开的数字周围旗数相符时，点击数字或按空格快速展开；误标旗会导致踩雷。</p>
-      <p>方向键移动，空格揭开，F 标旗。暂停、切换游戏或切到后台时停止计时。</p>
-      <button id="mines-help-close" class="primary-button">知道了</button>
+    <dialog class="info-dialog help-dialog" id="mines-help-dialog" aria-labelledby="mines-help-title">
+      <header class="help-header"><div><span class="help-kicker">新手入门 · 扫雷</span><h2 id="mines-help-title" tabindex="-1" autofocus>找到安全格，避开地雷</h2></div><button class="dialog-close" data-help-close type="button" aria-label="关闭扫雷玩法说明">×</button></header>
+      <div class="help-content">
+        <section class="help-section"><h3><b>1</b> 怎样算赢？</h3><p><strong>揭开所有没有地雷的格子</strong>即可获胜；点到地雷就结束。第一次揭开的格子和它周围的八格不会布雷。</p></section>
+        <section class="help-section"><h3><b>2</b> 数字是什么意思？</h3><p>格子上的数字，是它周围<strong>最多八格</strong>里的地雷数量。例如看到“1”，表示周围恰有一颗雷，但并不直接告诉你在哪一格。空白表示周围没有雷，会连片展开；边角格的邻居少于八格。</p></section>
+        <section class="help-section"><h3><b>3</b> 点格与插旗</h3><p>电脑<strong>左键揭开，右键标记</strong>；右键依次切换“旗帜 → 问号 → 未标记”。手机先揭开一格，再打开<strong>“插旗模式”</strong>，点未知格标记；关闭它后继续揭开。旗帜只是你的判断，不保证那里真的有雷。</p></section>
+        <section class="help-section"><h3><b>4</b> 进阶操作与暂停</h3><p>已揭开的数字周围旗数与数字相同时，点击该数字或按空格，可快速揭开其余邻格。<strong>如果旗标错了，这一步仍可能踩雷。</strong>方向键移动，F 标旗，空格揭开。暂停或切换游戏会停止计时；新游戏会重新布雷。</p></section>
+        <p class="help-return">随时点右上角 <strong>“? 玩法说明”</strong> 或扫雷下方的 <strong>“帮助”</strong> 重新查看。建议从初级 9 × 9 开始。</p>
+      </div>
+      <footer class="help-footer"><label><input type="checkbox" data-help-hide> 下次进入扫雷不再自动显示</label><button class="primary-button" data-help-close type="button">明白了，开始扫雷</button></footer>
     </dialog>
     <!-- 切换逻辑 -->
     <script type="module">
-      import { minesApp } from './src/minesUI.js?v=20261031-dual';
+      import { minesApp } from './src/minesUI.js?v=20261102-teach';
       const tabs = document.querySelectorAll('.game-tab');
       const views = document.querySelectorAll('.game-view');
       const indicator = document.querySelector('.tab-indicator');

@@ -232,14 +232,15 @@ export const minesApp = {
 };
 
 function syncPause() {
-  if (game) game.setPaused(!active || userPaused || document.hidden);
-  if (active) audio.setPaused(userPaused || document.hidden || !!game?.over);
+  if (game) game.setPaused(!active || userPaused || document.hidden || !!document.querySelector('.help-dialog[open]'));
+  if (active) audio.setPaused(userPaused || document.hidden || !!game?.over || !!document.querySelector('.help-dialog[open]'));
   const button = $('mines-pause-button');
   button?.setAttribute('aria-pressed', String(userPaused));
   if (button) button.textContent = userPaused ? '▶ 继续' : 'Ⅱ 暂停';
   if ($('mines-pause-overlay')) $('mines-pause-overlay').hidden = !userPaused;
 }
 document.addEventListener('visibilitychange', syncPause);
+window.addEventListener('game-help-change', syncPause);
 
 // 延迟绑定：DOM 可能在本模块加载后才完整
 requestAnimationFrame(() => {
@@ -263,8 +264,6 @@ requestAnimationFrame(() => {
     flagMode = !flagMode; e.currentTarget.setAttribute('aria-pressed', String(flagMode));
     e.currentTarget.textContent = flagMode ? '🚩 插旗模式：开' : '🚩 插旗模式：关';
   });
-  $('mines-help')?.addEventListener('click', () => $('mines-help-dialog')?.showModal());
-  $('mines-help-close')?.addEventListener('click', () => $('mines-help-dialog')?.close());
 
   // 扫雷专属音量与音乐控件（与数独共用同一份 audio 设置，UI 双向同步）
   const sync = () => {

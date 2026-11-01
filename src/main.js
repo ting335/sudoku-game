@@ -5,6 +5,7 @@
 // ✅ 冲突高亮联动（选中/填数时冲突格子同步闪红）
 // ============================================================
 
+import { setupHelp } from './help.js?v=20261102-teach';
 import { makeEvenCells, evenAllows } from './core/even.js';
 import { sfx, audio } from './audio.js?v=20261031-dual';
 import { showCandidates, highlightUniqueLocation, fillOneCorrect } from './hint.js?v=20261031-layout';
@@ -630,7 +631,7 @@ function setupAudioControls() {
   document.addEventListener('keydown', resumeAudio);
   document.addEventListener('visibilitychange', () => {
     if (document.getElementById('view-sudoku')?.hidden) return;
-    audio.setPaused(document.hidden || state.paused || winDialog.open);
+    audio.setPaused(document.hidden || state.paused || winDialog.open || !!document.querySelector('.help-dialog[open]'));
   });
   renderAudio();
 }
@@ -708,24 +709,19 @@ function bindEvents() {
     document.addEventListener('click', () => { if (difficultyTooltip) difficultyTooltip.hidden = true; });
   }
 
-  if (helpButton && infoDialog) helpButton.addEventListener('click', () => {
-    const dialog = document.getElementById('view-sudoku')?.hidden ? $('mines-help-dialog') : infoDialog;
-    dialog?.showModal();
-  });
-  const dialogClose = document.getElementById('dialog-close'), dialogOk = document.getElementById('dialog-ok');
-  if (dialogClose && infoDialog) dialogClose.addEventListener('click', () => infoDialog.close());
-  if (dialogOk && infoDialog) dialogOk.addEventListener('click', () => infoDialog.close());
   const winNewGame = document.getElementById('win-new-game');
   if (winNewGame && winDialog) winNewGame.addEventListener('click', () => { winDialog.close(); startNewGame(); });
   if (dailyButton) dailyButton.addEventListener('click', () => { showToast('已为你开启今日挑战'); startNewGame(); });
   const syncActiveView = () => {
     if (document.getElementById('view-sudoku')?.hidden) { stopTimer(); saveProgress(); return; }
-    audio.setPaused(document.hidden || state.paused || winDialog.open);
-    if (!document.hidden && !state.paused && !winDialog.open) startTimer(); else stopTimer();
+    audio.setPaused(document.hidden || state.paused || winDialog.open || !!document.querySelector('.help-dialog[open]'));
+    if (!document.hidden && !state.paused && !winDialog.open && !document.querySelector('.help-dialog[open]')) startTimer(); else stopTimer();
   };
   document.addEventListener('visibilitychange', syncActiveView);
   window.addEventListener('game-view-change', syncActiveView);
+  window.addEventListener('game-help-change', syncActiveView);
   setupHintMenu(); bindKeyboard();
 }
 
 init();
+setupHelp();

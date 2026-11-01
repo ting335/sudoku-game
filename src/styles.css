@@ -661,6 +661,74 @@ h1 { margin: 0; font-size: 29px; line-height: 1.15; }
 .even-rule-text { margin: 0; padding: 8px 12px; border: 1px solid var(--border); border-radius: 9px; background: var(--accent-soft); color: var(--accent); font-size: 11px; line-height: 1.5; }
 .cell.even-cell::before { content: ''; position: absolute; inset: 15%; border: 1px dashed var(--accent); border-radius: 50%; opacity: .6; pointer-events: none; }
 .cell.even-cell.notes::before { opacity: .25; }
+/* Readable play area and an explicit entry for first-time players. */
+:root { --board-size: clamp(290px, calc(100dvh - 300px), 680px); }
+.app-shell { max-width: 1500px; }
+.layout { grid-template-columns: minmax(0, 250px) minmax(0, calc(var(--board-size) + 24px)) minmax(0, 250px); }
+.topbar { min-height: 56px; height: auto; }
+.help-entry { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 42px; padding: 8px 14px; border: 1px solid var(--border-strong); border-radius: 12px; background: var(--accent-soft); color: var(--accent); font-size: 15px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.help-entry > span { display: inline-grid; place-items: center; width: 22px; height: 22px; border: 1.5px solid currentColor; border-radius: 50%; font-size: 15px; }
+.help-entry:hover { box-shadow: 0 0 0 3px var(--accent-soft); }
+.cell { font-size: clamp(22px, 2.5vw, 33px); }
+.side-card-heading h2 { font-size: 16px; }
+.rules-card > p, .progress-caption, .record-row, .local-note, .keyboard-hint { font-size: 14px; line-height: 1.75; }
+.sound-toggles button, .volume-label, .number-legend, .rule-example, .even-rule-text, .diagonal-rule-text { font-size: 13px; }
+.mode-toggle, .difficulty-control select, .timer-wrap, .tool-button { font-size: 14px; }
+.board-toolbar { height: auto; min-height: 34px; }
+.difficulty-control select { min-width: 82px; }
+.digit-button { height: 42px; font-size: 24px; }
+.tool-button { min-height: 36px; }
+.help-dialog { width: min(820px, calc(100vw - 32px)); max-height: min(90dvh, 940px); padding: 0; overflow: hidden; border-radius: 22px; }
+.help-dialog[open] { display: flex; flex-direction: column; }
+.help-header { position: relative; flex-shrink: 0; padding: 24px 64px 18px 28px; border-bottom: 1px solid var(--border); }
+.help-kicker { font-size: 14px; font-weight: 700; color: var(--accent); }
+.help-dialog h2 { margin: 6px 0 0; font-size: clamp(24px, 3vw, 30px); line-height: 1.35; color: var(--text); }
+.help-dialog h2:focus { outline: none; }
+.help-header::after { content: '向下滚动查看完整教学 · 底部按钮可随时开始'; display: block; margin-top: 8px; color: var(--text-soft); font-size: 14px; line-height: 1.5; }
+.help-dialog .dialog-close { width: 40px; height: 40px; top: 22px; right: 20px; color: var(--text-soft); }
+.help-content { min-height: 0; padding: 10px 28px 22px; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
+.help-dialog p, .help-dialog li { font-size: 16px; line-height: 1.85; color: var(--text-soft); }
+.help-dialog strong { color: var(--text); }
+.help-lead { margin: 12px 0 20px; }
+.help-section { margin-top: 22px; }
+.help-section h3 { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; color: var(--text); font-size: 19px; line-height: 1.5; }
+.help-section h3 > b { display: inline-grid; place-items: center; flex-shrink: 0; width: 29px; height: 29px; border-radius: 9px; background: var(--accent-soft); color: var(--accent); font-size: 16px; }
+.help-section p { margin: 8px 0; }
+.help-rule-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.help-rule-cards article { padding: 16px; border: 1px solid var(--border-strong); border-radius: 14px; background: var(--surface-2); }
+.help-rule-cards article > span { color: var(--accent); font-size: 25px; }
+.help-rule-cards h4 { margin: 4px 0; font-size: 17px; }
+.help-rule-cards p { margin: 0; font-size: 15px; line-height: 1.7; }
+.help-example { padding: 18px; border-radius: 14px; background: var(--accent-soft); }
+.help-number-example { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); margin: 14px 0; border: 1px solid var(--border-strong); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.help-number-example > span { display: grid; place-items: center; min-height: 42px; border-right: 1px solid var(--border-strong); font-size: 23px; font-weight: 700; }
+.help-number-example > span:last-child { border: 0; }
+.help-number-example .missing { background: var(--gold-soft); color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); }
+.help-section ol { padding-left: 24px; }
+.help-section li { margin: 8px 0; }
+.help-note { padding: 12px; border-left: 3px solid var(--accent); background: var(--surface-2); }
+.help-extra { margin-top: 20px; padding: 14px; border: 1px solid var(--border); border-radius: 12px; }
+.help-extra summary { cursor: pointer; font-size: 16px; color: var(--accent); font-weight: 700; line-height: 1.7; }
+.help-return { padding-top: 14px; border-top: 1px solid var(--border); }
+.help-footer { display: flex; flex-shrink: 0; align-items: center; justify-content: space-between; gap: 14px; padding: 18px 28px; border-top: 1px solid var(--border); background: var(--surface); }
+.help-footer label { display: flex; align-items: center; gap: 8px; color: var(--text-soft); font-size: 15px; line-height: 1.5; cursor: pointer; }
+.help-footer input { width: 19px; height: 19px; flex-shrink: 0; accent-color: var(--accent); }
+.help-footer .primary-button { min-height: 46px; font-size: 16px; white-space: nowrap; color: var(--bg); background: var(--accent); }
+@media (max-width: 560px) {
+  .help-entry { min-height: 36px; padding: 6px 9px; font-size: 13px; gap: 4px; }
+  .help-entry > span { width: 18px; height: 18px; font-size: 12px; }
+  .help-dialog { width: calc(100vw - 20px); max-height: 94dvh; border-radius: 16px; }
+  .help-header { padding: 18px 54px 14px 18px; }
+  .help-dialog .dialog-close { top: 14px; right: 10px; }
+  .help-content { padding: 0 18px 16px; }
+  .help-rule-cards { grid-template-columns: 1fr; }
+  .help-rule-cards article { padding: 12px; }
+  .help-rule-cards article > span { float: right; }
+  .help-example { padding: 12px; }
+  .help-number-example > span { min-height: 34px; font-size: 19px; }
+  .help-footer { padding: 12px 18px; align-items: stretch; flex-direction: column; gap: 10px; }
+  .help-footer .primary-button { width: 100%; }
+}
 @media (max-width: 1100px) {
   .app-shell { padding-inline: 14px; }
   .layout { grid-template-columns: minmax(0, 1fr); gap: 16px; padding-top: 10px; }
@@ -673,7 +741,15 @@ h1 { margin: 0; font-size: 29px; line-height: 1.15; }
   .sound-toggles { flex-direction: row; }
   .topbar-right { gap: 8px; }
   .offline-label { font-size: 10px; }
-  .cell { font-size: clamp(16px, 4.7vw, 23px); }
+  .cell { font-size: clamp(20px, 5vw, 27px); }
+}
+@media (max-width: 560px) {
+  .board-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 7px; }
+  .difficulty-wrapper { grid-column: 1; grid-row: 1; }
+  .timer-wrap { grid-column: 2; grid-row: 1; }
+  .pause-button { grid-column: 3; grid-row: 1; }
+  #diagonal-toggle { grid-column: 1; grid-row: 2; justify-self: start; }
+  #even-toggle { grid-column: 2 / 4; grid-row: 2; justify-self: end; }
 }
 @media (max-width: 390px) {
   .board-card { padding-inline: 8px; }
