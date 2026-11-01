@@ -16,7 +16,7 @@
         document.documentElement.setAttribute('data-theme', t);
       })();
     </script>
-    <link rel="stylesheet" href="./src/styles.css?v=20261102-teach">
+    <link rel="stylesheet" href="./src/styles.css?v=20261102-mines-layout">
     <script type="module" src="./src/main.js?v=20261102-teach"></script>
 
   </head>
@@ -162,27 +162,37 @@
           </div>
         </div>
 
-        <!-- ======== 扫雷视图（优化排版） ======== -->
+        <!-- 扫雷：与数独相同的左右侧栏与居中棋盘 -->
         <div id="view-mines" class="game-view" data-game-view="mines" hidden>
           <div class="game-center mine-center">
-            <div class="mines-wrap">
-
-              <!-- 标题 + 难度 -->
-              <div class="mines-top">
-                <div class="mines-title-area">
+            <div class="layout mines-layout">
+              <aside class="side-column side-left" aria-label="扫雷设置与规则">
+                <section class="side-card mines-settings"><div class="side-card-heading"><span class="side-icon" aria-hidden="true">⚙</span><h2>游戏设置</h2></div>
+                  <label class="mines-setting-label" for="mines-difficulty">选择难度</label><select aria-label="扫雷难度" id="mines-difficulty" class="mines-diff-select">
+                  <option value="easy" selected>初级</option>
+                  <option value="medium">中级</option>
+                  <option value="hard">高级</option></select>
+                  <p class="local-note">从初级开始熟悉数字与雷区。切换难度将开始新局。</p>
+                </section>
+                <section class="side-card mines-records"><div class="side-card-heading"><span class="side-icon" aria-hidden="true">⌁</span><h2>最佳纪录</h2></div>
+                  <div class="record-row"><span>初级 · 9 × 9</span><strong id="mine-record-easy">—</strong></div>
+                  <div class="record-row"><span>中级 · 16 × 16</span><strong id="mine-record-medium">—</strong></div>
+                  <div class="record-row"><span>高级 · 30 × 16</span><strong id="mine-record-hard">—</strong></div>
+                  <p class="local-note">纪录保存在当前浏览器。</p>
+                </section>
+                <section class="side-card mines-rules"><div class="side-card-heading"><span class="side-icon" aria-hidden="true">▦</span><h2>扫雷规则</h2></div>
+                  <ul><li>揭开所有非雷格即可获胜。</li><li>数字是周围八格中的地雷数。</li><li>第一次揭开及其周围八格安全。</li><li>右键循环标旗、问号、取消；手机可用插旗模式。</li></ul>
+                  <button id="mines-help" class="action-btn" type="button">? 查看完整玩法</button>
+                </section>
+              </aside>
+              <section class="game-column mines-game" aria-label="扫雷游戏区域">
+                <div class="mines-top"><div class="mines-title-area">
                   <p class="eyebrow">经典扫雷</p>
                   <h1 class="mines-main-title"><span id="mines-level-label">初级</span> · <span id="mines-total">10</span> 颗雷</h1>
                   <p class="mines-sub">棋盘 <span id="mines-size">9 × 9</span> · 左键揭开，右键插旗</p>
                 </div>
-                <select aria-label="扫雷难度" id="mines-difficulty" class="mines-diff-select">
-                  <option value="easy" selected>初级</option>
-                  <option value="medium">中级</option>
-                  <option value="hard">高级</option>
-                </select>
-              </div>
-
-              <!-- HUD -->
-              <div class="mines-hud">
+                </div>
+                <div class="mines-hud">
                 <div class="hud-left">
                   <span class="hud-item">💣 <strong id="mines-left">010</strong></span>
                   <span class="hud-item">🚩 <strong id="mines-flags">0</strong></span>
@@ -194,9 +204,7 @@
                   <span class="hud-item">⏱ <strong id="mines-timer">000</strong></span>
                 </div>
               </div>
-
-              <!-- 棋盘 -->
-              <div class="mines-board-card">
+                <div class="mines-board-card">
                 <div id="minefield" class="mines-grid" role="grid" aria-label="扫雷棋盘"></div>
                 <div class="pause-overlay" id="mines-pause-overlay" hidden>
                   <div class="pause-card">
@@ -207,27 +215,13 @@
                   </div>
                 </div>
               </div>
-
-              <!-- 底部操作 -->
-              <div class="mines-actions">
-                <button id="mines-new-button" class="action-btn">＋ 新游戏</button>
-                <button id="mines-restart-button" class="action-btn">↻ 重开</button>
-                <button id="mines-flag-mode" class="action-btn" aria-pressed="false">🚩 插旗模式：关</button>
-                <button id="mines-help" class="action-btn">? 帮助</button>
-                <button id="mines-pause-button" class="action-btn" aria-pressed="false">Ⅱ 暂停</button>
-              </div>
-
-              <!-- 提示文字 -->
-              <p id="mines-objective-caption" class="mines-caption">
-                左键揭开，右键插旗。第一下永远安全。
-              </p>
-
-              <!-- 最佳记录 -->
-              <div class="mines-records">
-                最佳：初级 <strong id="mine-record-easy">—</strong> · 中级 <strong id="mine-record-medium">—</strong> · 高级 <strong id="mine-record-hard">—</strong>
-              </div>
-
-              <section class="mines-sound" aria-label="扫雷声音设置">
+                <p id="mines-objective-caption" class="mines-caption" role="status">左键揭开，右键插旗。第一下永远安全。</p>
+                <p id="mines-scroll-note" class="mines-scroll-note" hidden>↔ 高级棋盘较宽，可在棋盘区域横向滚动查看。</p>
+                <div class="mines-quick-actions"><button id="mines-flag-mode" class="action-btn" aria-pressed="false" type="button">🚩 插旗模式：关</button><button id="mines-pause-button" class="action-btn" aria-pressed="false" type="button">Ⅱ 暂停</button></div>
+              </section>
+              <aside class="side-column side-right" aria-label="扫雷声音与操作">
+                <section class="side-card"><div class="side-card-heading"><span class="side-icon" aria-hidden="true">♫</span><h2>声音与氛围</h2></div>
+                <section class="mines-sound" aria-label="扫雷声音设置">
                 <button id="mines-music-button" class="action-btn" aria-pressed="false">♫ 播放音乐</button>
                 <button id="mines-effects-button" class="action-btn" aria-pressed="true">♪ 音效开启</button>
                 <label>音量 <output id="mines-volume-value">35%</output>
@@ -235,17 +229,11 @@
                 </label>
                 <p id="mines-audio-status" role="status"></p>
               </section>
-              <!-- 规则 -->
-              <div class="mines-rules">
-                <h3>规则</h3>
-                <ul>
-                  <li>数字表示周围 8 格中有多少颗雷</li>
-                  <li>右键插旗标记你认为有雷的位置</li>
-                  <li>数字格上的旗数吻合时，按空格自动揭开周围</li>
-                  <li>第一次点击绝对安全</li>
-                </ul>
-              </div>
-
+                </section>
+                <button id="mines-new-button" class="primary-button new-game-button" type="button">＋ 开始新一局</button>
+                <button id="mines-restart-button" class="action-btn" type="button">↻ 重新布雷</button>
+                <p class="keyboard-hint">方向键移动，<kbd>空格</kbd> 揭开，<kbd>F</kbd> 标旗。数字周围旗数相符时，点击数字可快速展开；误标旗仍可能踩雷。</p>
+              </aside>
             </div>
           </div>
         </div>
@@ -290,7 +278,7 @@
     </dialog>
     <!-- 切换逻辑 -->
     <script type="module">
-      import { minesApp } from './src/minesUI.js?v=20261102-teach';
+      import { minesApp } from './src/minesUI.js?v=20261102-mines-layout';
       const tabs = document.querySelectorAll('.game-tab');
       const views = document.querySelectorAll('.game-view');
       const indicator = document.querySelector('.tab-indicator');
@@ -455,6 +443,47 @@
         .game-tab { padding: 7px 9px; }
         #minefield { grid-template-columns: repeat(var(--cols, 9), 28px); }
         .mcell { width: 28px; height: 28px; }
+      }
+      /* Three-column mine layout: share Sudoku's sizing and visual rhythm. */
+      .mines-layout { width: 100%; }
+      .mines-layout .mines-top { margin: 0 0 12px; min-height: 40px; max-width: none; }
+      .mines-layout .mines-title-area .eyebrow { display: none; }
+      .mines-layout .mines-main-title { font-size: 27px; margin: 0 0 6px; }
+      .mines-layout .mines-sub { font-size: 14px; line-height: 1.6; }
+      .mines-layout .mines-hud { width: 100%; justify-content: space-between; gap: 10px; border-radius: 14px; padding: 12px; }
+      .mines-layout .hud-item { font-size: 16px; }
+      .mines-layout .mines-board-card { width: 100%; padding: 12px; border-radius: 16px; }
+      .mines-layout #minefield { --mine-size: clamp(28px, calc((var(--board-size) - 46px) / 9), 64px); grid-template-columns: repeat(var(--cols, 9), var(--mine-size)); }
+      .mines-layout #minefield[data-preset="medium"] { --mine-size: clamp(24px, calc((var(--board-size) - 54px) / 16), 38px); }
+      .mines-layout #minefield[data-preset="hard"] { --mine-size: 30px; }
+      .mines-layout .mcell { width: var(--mine-size); height: var(--mine-size); font-size: clamp(18px, 2vw, 26px); }
+      .mines-layout #minefield:not([data-preset="easy"]) .mcell { font-size: 17px; }
+      .mines-layout .mines-setting-label { display: block; margin: 16px 0 8px; font-size: 14px; color: var(--text-soft); }
+      .mines-layout .mines-diff-select { width: 100%; min-height: 42px; font-size: 15px; border-radius: 9px; }
+      .mines-layout .mines-records, .mines-layout .mines-rules { margin: 0; color: var(--text-soft); }
+      .mines-layout .mines-rules ul { margin: 12px 0; padding-left: 20px; font-size: 14px; line-height: 1.9; }
+      .mines-layout .mines-rules button { width: 100%; }
+      .mines-layout .mines-sound { display: flex; flex-direction: column; align-items: stretch; margin-top: 14px; gap: 10px; }
+      .mines-layout .mines-sound button { min-height: 40px; font-size: 14px; }
+      .mines-layout .mines-sound label { flex-wrap: wrap; justify-content: space-between; font-size: 14px; }
+      .mines-layout .mines-sound input { width: 100%; margin-top: 5px; }
+      .mines-layout .mines-sound p { text-align: left; font-size: 13px; line-height: 1.7; }
+      .mines-layout .mines-caption, .mines-scroll-note { margin: 12px 0; font-size: 14px; line-height: 1.7; color: var(--text-soft); text-align: center; }
+      .mines-quick-actions { display: flex; gap: 10px; }
+      .mines-quick-actions button { flex: 1; min-height: 42px; font-size: 14px; }
+      @media (max-width: 1100px) {
+        .mines-layout { grid-template-columns: minmax(0, 1fr); }
+        .mines-layout .mines-game { width: min(100%, 580px); }
+        .mines-layout #minefield { --mine-size: clamp(24px, calc((100vw - 74px) / 9), 54px); }
+        .mines-layout #minefield[data-preset="medium"] { --mine-size: 28px; }
+        .mines-layout #minefield[data-preset="hard"] { --mine-size: 30px; }
+        .mines-layout .mines-rules { grid-column: 1 / -1; }
+      }
+      @media (max-width: 390px) {
+        .mines-layout .side-left { grid-template-columns: minmax(0, 1fr); }
+        .mines-layout .mines-main-title { font-size: 24px; }
+        .mines-layout .hud-left, .mines-layout .hud-right { gap: 8px; }
+        .mines-layout .hud-item { font-size: 14px; }
       }
     </style>
   </body>

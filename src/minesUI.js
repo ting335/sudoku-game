@@ -29,6 +29,8 @@ function render() {
   if (!field || !game) return;
   const { cols, rows, board, adj, over, won } = game;
   field.style.setProperty('--cols', cols);
+  if (field.dataset.preset !== game.preset) { field.dataset.preset = game.preset; field.parentElement.scrollLeft = 0; }
+  if ($('mines-scroll-note')) $('mines-scroll-note').hidden = cols <= 16;
   const hadFocus = field.contains(document.activeElement);
   field.innerHTML = '';
   field.setAttribute('aria-colcount', cols);
