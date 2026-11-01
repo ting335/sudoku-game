@@ -1,3 +1,4 @@
+import { cleanNotes, editCell, travelHistory } from './core/notes.js';
 // ============================================================
 // 数独 · 静心一局 - main.js
 // ✅ 对角线模式 + 规则自动显隐
@@ -8,7 +9,7 @@
 import { setupHelp } from './help.js?v=20261102-teach';
 import { makeEvenCells, evenAllows } from './core/even.js';
 import { sfx, audio } from './audio.js?v=20261102-atmosphere';
-import { showCandidates, highlightUniqueLocation, fillOneCorrect } from './hint.js?v=20261031-layout';
+import { showCandidates, highlightUniqueLocation, fillOneCorrect } from './hint.js?v=20261102-notes';
 
 // ---------- 工具函数 ----------
 function shuffle(arr) {
@@ -239,7 +240,7 @@ function generatePuzzle(difficulty) {
 let state = {
   puzzle: [], solution: [], userGrid: [], given: [],
   selectedCell: null, mistakes: 0, timer: 0,
-  timerInterval: null, paused: false, notesMode: false,
+  timerInterval: null, paused: false, notesMode: false, notes: {},
   history: [], historyIndex: -1, hintUsed: false,
   difficulty: 'medium', diagonalMode: false, evenMode: false, evenCells: [],
 };
@@ -290,7 +291,7 @@ function startNewGame() {
   state.userGrid = puzzle.map(row => [...row]);
   state.given = puzzle.map(row => row.map(v => v !== 0));
   state.mistakes = 0; state.timer = 0; state.paused = false;
-  state.notesMode = false; state.history = []; state.historyIndex = -1;
+  state.notesMode = false; state.notes = {}; state.history = []; state.historyIndex = -1;
   state.hintUsed = false; state.selectedCell = null;
   if (pauseOverlay) pauseOverlay.hidden = true;
   if (timerEl) timerEl.textContent = formatTime(0);
@@ -316,12 +317,18 @@ function renderBoard() {
       if (state.diagonalMode && (r === c || r + c === 8)) cell.classList.add('diagonal-cell');
       if (state.evenMode && state.evenCells.includes(r * 9 + c)) cell.classList.add('even-cell');
       cell.setAttribute('aria-label', `第 ${r + 1} 行第 ${c + 1} 列${state.evenMode && state.evenCells.includes(r * 9 + c) ? '，圆圈内只能填偶数' : ''}`);
+      renderCellNotes(cell,r,c);
       updateCellFeedback(cell, r, c);
       cell.addEventListener('click', () => selectCell(cell, r, c));
       boardEl.appendChild(cell);
     }
   }
-  renderDigitPad();
+  if (state.selectedCell) {
+    const {r,c} = state.selectedCell;
+    const el = boardEl.querySelector(`[data-row="${r}"][data-col="${c}"]`);
+    state.selectedCell = {el,r,c}; el.classList.add('selected'); el.tabIndex=0;
+  }
+  renderDigitPad(); updateNotesButton(); updateUndoRedoButtons();
 }
 
 function renderDigitPad() {
@@ -429,10 +436,13 @@ function inputNumber(num) {
   const { el, r, c } = state.selectedCell;
   if (state.given[r][c]) return;
 
-  state.history = state.history.slice(0, state.historyIndex + 1);
-  state.history.push({ r, c, prev: state.userGrid[r][c], next: num });
-  state.historyIndex++;
-  state.userGrid[r][c] = num;
+  if (state.notesMode) {
+    if (state.userGrid[r][c]) { showToast('请先擦除正式答案，再记录笔记'); return; }
+    const notes = cleanNotes(state.notes[r*9+c]);
+    editCell(state,r,c,0,notes.includes(num) ? notes.filter(n=>n!==num) : [...notes,num]);
+    renderCellNotes(el,r,c); saveProgress(); updateUndoRedoButtons(); return;
+  }
+  editCell(state,r,c,num,[]);
   el.textContent = num; el.classList.remove('notes', 'error'); el.dataset.notes = '';
   el.classList.remove('pop', 'error-flash'); updateCellFeedback(el, r, c); void el.offsetWidth;
 
@@ -458,9 +468,8 @@ function safeSfx(name) {
 function eraseCell() {
   if (!state.selectedCell || state.paused) return;
   const { el, r, c } = state.selectedCell;
-  if (state.given[r][c] || state.userGrid[r][c] === 0) return;
-  state.history.push({ r, c, prev: state.userGrid[r][c], next: 0 }); state.historyIndex++;
-  state.userGrid[r][c] = 0; el.textContent = '';
+  if (!editCell(state,r,c,0,[])) return;
+  el.textContent = '';
   el.classList.remove('error', 'error-flash', 'notes', 'pop'); el.dataset.notes = '';
   updateCellFeedback(el, r, c);
 
@@ -471,9 +480,27 @@ function eraseCell() {
 }
 
 // ---------- 笔记 ----------
+function renderCellNotes(cell,r,c) {
+  const notes = state.userGrid[r][c] ? [] : cleanNotes(state.notes[r*9+c]);
+  cell.classList.toggle('notes',notes.length>0);
+  cell.dataset.notes = notes.join(',');
+  cell.setAttribute('aria-label',`第 ${r+1} 行第 ${c+1} 列${state.evenMode && state.evenCells.includes(r*9+c) ? '，圆圈内只能填偶数' : ''}`);
+  if (!notes.length) { if (!state.userGrid[r][c]) cell.textContent=''; return; }
+  cell.innerHTML = '<div class="notes-grid">'+Array.from({length:9},(_,i)=>`<span class="note-num">${notes.includes(i+1)?i+1:''}</span>`).join('')+'</div>';
+  cell.setAttribute('aria-label',cell.getAttribute('aria-label')+'，笔记：'+notes.join('、'));
+}
+function updateNotesButton() {
+  if (!notesButton) return;
+  notesButton.setAttribute('aria-pressed',String(state.notesMode));
+  notesButton.classList.toggle('active',state.notesMode);
+  notesButton.querySelector('.notes-label').textContent = state.notesMode ? '笔记：开' : '笔记';
+  notesButton.title = '记录可能的数字，不是正式答案；同一数字再点一次可取消';
+  const status = $('notes-status');
+  if (status) { status.hidden=!state.notesMode; status.textContent='✎ 笔记已开启：先选空格，再点数字记录可能值；重复点可取消，关闭后恢复正式填数。'; }
+}
 function toggleNotes() {
-  state.notesMode = !state.notesMode;
-  if (notesButton) { notesButton.setAttribute('aria-pressed', String(state.notesMode)); notesButton.classList.toggle('active', state.notesMode); }
+  if (state.paused) return;
+  state.notesMode = !state.notesMode; updateNotesButton(); saveProgress();
 }
 
 // ---------- 提示菜单 ----------
@@ -488,7 +515,11 @@ function setupHintMenu() {
       if (!state.selectedCell) return;
       const type = btn.dataset.hint;
       if (type === 'candidates') {
-        const count = showCandidates(); safeSfx('hint'); state.hintUsed = true;
+        const count = showCandidates();
+        boardEl.querySelectorAll('.cell.notes').forEach(cell=>{
+          state.notes[+cell.dataset.row*9 + +cell.dataset.col] = cleanNotes([...cell.querySelectorAll('.note-num')].map(n=>Number(n.textContent)));
+        });
+        renderBoard(); safeSfx('hint'); state.hintUsed = true;
         showToast(count > 0 ? `已标出 ${count} 格候选数` : '当前没有可显示的候选数');
       } else if (type === 'location') {
         const count = highlightUniqueLocation(); safeSfx('hint'); state.hintUsed = true;
@@ -505,7 +536,7 @@ function setupHintMenu() {
 
 function syncUserGridFromBoard() {
   const cells = boardEl ? boardEl.querySelectorAll('.cell') : [];
-  cells.forEach(cell => { const r = +cell.dataset.row, c = +cell.dataset.col, v = parseInt(cell.textContent, 10); if (!cell.classList.contains('notes') && !isNaN(v) && v >= 1 && v <= 9) state.userGrid[r][c] = v; });
+  cells.forEach(cell => { const r = +cell.dataset.row, c = +cell.dataset.col, v = parseInt(cell.textContent, 10); if (!cell.classList.contains('notes') && !isNaN(v) && v >= 1 && v <= 9 && v !== state.userGrid[r][c]) editCell(state,r,c,v,[]); });
   cells.forEach(cell => { const r = +cell.dataset.row, c = +cell.dataset.col; if (!state.given[r][c]) updateCellFeedback(cell, r, c); });
   clearConflictHighlights();
 }
@@ -567,13 +598,13 @@ function togglePause() {
 
 function undo() {
   if (state.historyIndex < 0 || state.paused) return;
-  const a = state.history[state.historyIndex]; state.userGrid[a.r][a.c] = a.prev; state.historyIndex--;
+  travelHistory(state,-1);
   renderBoard(); updateProgress(); saveProgress(); updateUndoRedoButtons();
 }
 
 function redo() {
   if (state.historyIndex >= state.history.length - 1 || state.paused) return;
-  const a = state.history[state.historyIndex + 1]; state.userGrid[a.r][a.c] = a.next; state.historyIndex++;
+  travelHistory(state,1);
   renderBoard(); updateProgress(); saveProgress(); updateUndoRedoButtons();
 }
 
@@ -640,7 +671,7 @@ function setupAudioControls() {
 }
 
 function saveProgress() {
-  const data = { puzzle: state.puzzle, solution: state.solution, userGrid: state.userGrid, given: state.given, mistakes: state.mistakes, timer: state.timer, history: state.history.slice(-50), historyIndex: state.historyIndex, difficulty: state.difficulty, diagonalMode: state.diagonalMode, evenMode: state.evenMode, evenCells: state.evenCells };
+  const data = { puzzle: state.puzzle, solution: state.solution, userGrid: state.userGrid, given: state.given, mistakes: state.mistakes, timer: state.timer, notes: state.notes, notesMode: state.notesMode, history: state.history, historyIndex: state.historyIndex, difficulty: state.difficulty, diagonalMode: state.diagonalMode, evenMode: state.evenMode, evenCells: state.evenCells };
   try { localStorage.setItem('sudoku-progress', JSON.stringify(data)); } catch (e) {}
 }
 
@@ -648,7 +679,7 @@ function loadProgress() {
   const raw = localStorage.getItem('sudoku-progress'); if (!raw) return false;
   try {
     const data = JSON.parse(raw);
-    Object.assign(state, { puzzle: data.puzzle || [], solution: data.solution || [], userGrid: data.userGrid || [], given: data.given || [], mistakes: data.mistakes || 0, timer: data.timer || 0, history: data.history || [], historyIndex: data.historyIndex || -1, difficulty: data.difficulty || 'medium', diagonalMode: data.diagonalMode || false, evenMode: data.evenMode === true, evenCells: Array.isArray(data.evenCells) ? data.evenCells : [] });
+    Object.assign(state, { puzzle: data.puzzle || [], solution: data.solution || [], userGrid: data.userGrid || [], given: data.given || [], mistakes: data.mistakes || 0, timer: data.timer || 0, history: data.history || [], historyIndex: Number.isInteger(data.historyIndex) ? Math.max(-1,Math.min(data.historyIndex,(data.history || []).length-1)) : -1, notes: Object.fromEntries(Object.entries(data.notes || {}).filter(([k])=>Number.isInteger(+k)&&+k>=0&&+k<81).map(([k,v])=>[k,cleanNotes(v)])), notesMode: data.notesMode === true, difficulty: data.difficulty || 'medium', diagonalMode: data.diagonalMode || false, evenMode: data.evenMode === true, evenCells: Array.isArray(data.evenCells) ? data.evenCells : [] });
     if (difficultySelect) difficultySelect.value = state.difficulty;
     if (timerEl) timerEl.textContent = formatTime(state.timer);
     updateDiagonalRuleVisibility(); return true;

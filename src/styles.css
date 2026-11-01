@@ -791,3 +791,8 @@ h1 { margin: 0; font-size: 29px; line-height: 1.15; }
 .rules-card .even-rule-text { margin: 9px 0; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--text-soft); font-size: 14px; line-height: 1.75; }
 .rules-card .even-rule-text strong { color: var(--accent); }
 .mode-toggle .mode-icon, .mode-toggle[aria-pressed="true"] .mode-icon { transform: none; transition: none; }
+
+.notes-grid { font-size: clamp(10px, 1.3vw, 16px); color: var(--accent); }
+.notes-grid .note-num { font-size: inherit; margin: 0; }
+.notes-status { margin: 8px 0; padding: 9px 12px; background: var(--accent-soft); border: 1px solid var(--border-strong); border-radius: 10px; color: var(--text-soft); font-size: 13px; line-height: 1.7; }
+#notes-button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); }

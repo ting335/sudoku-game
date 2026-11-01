@@ -16,8 +16,8 @@
         document.documentElement.setAttribute('data-theme', t);
       })();
     </script>
-    <link rel="stylesheet" href="./src/styles.css?v=20261102-compact">
-    <script type="module" src="./src/main.js?v=20261102-compact"></script>
+    <link rel="stylesheet" href="./src/styles.css?v=20261102-notes">
+    <script type="module" src="./src/main.js?v=20261102-notes"></script>
 
   </head>
   <body>
@@ -128,7 +128,7 @@
                 <section class="number-pad" aria-label="数字输入">
                   <div class="digit-row" id="digit-pad"></div>
                   <div class="action-row">
-                    <button class="tool-button" id="notes-button" type="button" aria-pressed="false"><span class="tool-icon">✎</span><span>笔记</span></button>
+                    <button class="tool-button" id="notes-button" type="button" aria-pressed="false"><span class="tool-icon">✎</span><span class="notes-label">笔记</span></button>
                     <div class="hint-wrapper">
                       <button class="tool-button hint-button" id="hint-button" type="button"><span class="tool-icon">✧</span><span>提示</span></button>
                       <div class="hint-menu" id="hint-menu" hidden>
@@ -141,6 +141,7 @@
                     <button class="tool-button" id="redo-button" type="button" disabled><span class="tool-icon">↷</span><span>重做</span></button>
                   </div>
                 </section>
+                <p id="notes-status" class="notes-status" role="status" hidden></p>
               </section>
 
               <aside class="side-column side-right" aria-label="声音与操作">
@@ -262,7 +263,7 @@
         <div class="help-compact-example"><span>例如一行只缺 5：</span><div class="help-number-example" role="img" aria-label="一行 1、2、3、4、5、6、7、8、9，其中 5 是需要填的数字"><span>1</span><span>2</span><span>3</span><span>4</span><span class="missing">5</span><span>6</span><span>7</span><span>8</span><span>9</span></div></div>
         <p><strong>怎么填：</strong>点空格 → 点数字或按 1–9。填错会标红，用“擦除”清除。</p>
         <p><strong>不会做：</strong>点“提示”看候选数；想休息点“暂停”。首次建议选初级，关闭附加规则。</p>
-        <details class="help-extra"><summary>更多操作与附加规则</summary><p>横着是一行，竖着是一列，整个棋盘有 9 宫。例子中的 5 也要符合所在的列和宫；若有矛盾，先检查之前的输入。方向键移动，Delete / Backspace 擦除，普通填数可撤销、重做。</p><p>三级提示依次为候选数、唯一位置、填入一个确定数字。候选数不是确定答案；手动笔记仍在完善，查看候选请用一级提示。</p><p><strong>对角线：</strong>两条主对角线也各含 1–9，不重复。<strong>偶数：</strong>圆圈格只允许 2、4、6、8。可组合开启，切换会开始新局。进度只保存在当前浏览器，不跨设备同步。</p></details>
+        <details class="help-extra"><summary>更多操作与附加规则</summary><p>横着是一行，竖着是一列，整个棋盘有 9 宫。例子中的 5 也要符合所在的列和宫；若有矛盾，先检查之前的输入。方向键移动，Delete / Backspace 擦除，普通填数可撤销、重做。</p><p>三级提示依次为候选数、唯一位置、填入一个确定数字。候选数不是确定答案。点“笔记”后，在空格输入小号候选数（例如 2、5）；重复输入同一个数可取消。关闭笔记再输入正式答案；擦除清空当前格，撤销/重做和刷新可保留笔记。</p><p><strong>对角线：</strong>两条主对角线也各含 1–9，不重复。<strong>偶数：</strong>圆圈格只允许 2、4、6、8。可组合开启，切换会开始新局。进度只保存在当前浏览器，不跨设备同步。</p></details>
       </div>
       <footer class="help-footer"><label><input type="checkbox" data-help-hide> 下次进入数独不再自动显示</label><button class="primary-button" data-help-close type="button">明白了，开始数独</button></footer>
     </dialog>

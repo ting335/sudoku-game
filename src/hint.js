@@ -118,7 +118,7 @@ export function showCandidates() {
 
   cells.forEach(cell => {
     const { r, c } = getCellRC(cell);
-    if (snapshot[r][c] !== 0) return;
+    if (snapshot[r][c] !== 0 || cell.dataset.notes) return;
 
     const candidates = getCandidates(snapshot, r, c);
     if (candidates.length > 0 && candidates.length <= 4) {
