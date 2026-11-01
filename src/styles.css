@@ -796,3 +796,9 @@ h1 { margin: 0; font-size: 29px; line-height: 1.15; }
 .notes-grid .note-num { font-size: inherit; margin: 0; }
 .notes-status { margin: 8px 0; padding: 9px 12px; background: var(--accent-soft); border: 1px solid var(--border-strong); border-radius: 10px; color: var(--text-soft); font-size: 13px; line-height: 1.7; }
 #notes-button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); }
+
+.compact-sudoku-help .help-header::after { content: none; }
+.help-two-sections h3 { margin: 14px 0 8px; font-size: 20px; color: var(--text); }
+.help-two-sections .variant-summary { font-size: 15px; line-height: 1.6; }
+.help-two-sections .help-operation-list { margin: 8px 0 0; padding-left: 22px; }
+.help-two-sections .help-operation-list li { margin: 5px 0; line-height: 1.65; }
