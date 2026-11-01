@@ -65,12 +65,15 @@ function render() {
       } else if (v === MINE_CELL.QUESTION) {
         cell.classList.add('question');
         cell.textContent = '?';
+        cell.setAttribute('aria-label', `${r+1} 行 ${c+1} 列，问号标记，尚未确定`);
       } else if (v === 'boom') {
         cell.classList.add('open', 'mine', 'boom');
         cell.textContent = '💥';
+        cell.setAttribute('aria-label', `${r+1} 行 ${c+1} 列，踩中的地雷，本局失败`);
       } else if (over && game.mines[i]) {
         // 结算时露出所有雷；误标的旗单独区分
         cell.classList.add('mine');
+        cell.setAttribute('aria-label', `${r+1} 行 ${c+1} 列，结算显示的地雷，未踩中`);
         cell.textContent = board[i] === MINE_CELL.FLAG ? '🚩' : '◈';
         if (board[i] === MINE_CELL.FLAG) cell.classList.add('flag-was-right');
       } else if (game.mines[i] && won) {

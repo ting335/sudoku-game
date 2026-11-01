@@ -16,7 +16,7 @@
         document.documentElement.setAttribute('data-theme', t);
       })();
     </script>
-    <link rel="stylesheet" href="./src/styles.css?v=20261102-mines-layout">
+    <link rel="stylesheet" href="./src/styles.css?v=20261102-mines-legend">
     <script type="module" src="./src/main.js?v=20261102-teach"></script>
 
   </head>
@@ -230,8 +230,10 @@
                 <p id="mines-audio-status" role="status"></p>
               </section>
                 </section>
+                
                 <button id="mines-new-button" class="primary-button new-game-button" type="button">＋ 开始新一局</button>
                 <button id="mines-restart-button" class="action-btn" type="button">↻ 重新布雷</button>
+                <section class="side-card mines-symbol-card"><div class="side-card-heading"><span class="side-icon" aria-hidden="true">◈</span><h2>棋盘图标说明</h2></div><dl class="mine-symbol-list"><div><dt><span class="mcell mine-symbol flag" aria-hidden="true">🚩</span><strong>已插旗</strong></dt><dd>玩家标记“这里可能有地雷”；不是系统确认。</dd></div><div><dt><span class="mcell mine-symbol wrong-flag" aria-hidden="true">×</span><strong>误标旗</strong></dt><dd>结算时显示：这里实际没有地雷，旗插错了。</dd></div><div><dt><span class="mcell mine-symbol mine" aria-hidden="true">◈</span><strong>未踩中的地雷</strong></dt><dd>红底黑色符号：结算时显示的地雷，不是这次踩中的那颗。</dd></div><div><dt><span class="mcell mine-symbol open mine boom" aria-hidden="true">💥</span><strong>踩中的地雷</strong></dt><dd>亮红底爆炸符号：本次揭开的地雷，导致本局失败。</dd></div></dl><p class="local-note">红叉和地雷图标主要在结算时出现。旗帜只是推测，旗数对上也不代表一定获胜。</p></section>
                 <p class="keyboard-hint">方向键移动，<kbd>空格</kbd> 揭开，<kbd>F</kbd> 标旗。数字周围旗数相符时，点击数字可快速展开；误标旗仍可能踩雷。</p>
               </aside>
             </div>
@@ -272,13 +274,14 @@
         <section class="help-section"><h3><b>2</b> 数字是什么意思？</h3><p>格子上的数字，是它周围<strong>最多八格</strong>里的地雷数量。例如看到“1”，表示周围恰有一颗雷，但并不直接告诉你在哪一格。空白表示周围没有雷，会连片展开；边角格的邻居少于八格。</p></section>
         <section class="help-section"><h3><b>3</b> 点格与插旗</h3><p>电脑<strong>左键揭开，右键标记</strong>；右键依次切换“旗帜 → 问号 → 未标记”。手机先揭开一格，再打开<strong>“插旗模式”</strong>，点未知格标记；关闭它后继续揭开。旗帜只是你的判断，不保证那里真的有雷。</p></section>
         <section class="help-section"><h3><b>4</b> 进阶操作与暂停</h3><p>已揭开的数字周围旗数与数字相同时，点击该数字或按空格，可快速揭开其余邻格。<strong>如果旗标错了，这一步仍可能踩雷。</strong>方向键移动，F 标旗，空格揭开。暂停或切换游戏会停止计时；新游戏会重新布雷。</p></section>
-        <p class="help-return">随时点右上角 <strong>“? 玩法说明”</strong> 或扫雷下方的 <strong>“帮助”</strong> 重新查看。建议从初级 9 × 9 开始。</p>
+        <section class="help-section mine-symbol-help"><h3><b>5</b> 看懂棋盘上的图标</h3><p>下方示例使用与棋盘相同的符号和颜色。不同设备上的表情图案可能略有差异，请同时看文字和底色。</p><dl class="mine-symbol-list"><div><dt><span class="mcell mine-symbol flag" aria-hidden="true">🚩</span><strong>已插旗</strong></dt><dd>玩家标记“这里可能有地雷”；不是系统确认。</dd></div><div><dt><span class="mcell mine-symbol wrong-flag" aria-hidden="true">×</span><strong>误标旗</strong></dt><dd>结算时显示：这里实际没有地雷，旗插错了。</dd></div><div><dt><span class="mcell mine-symbol mine" aria-hidden="true">◈</span><strong>未踩中的地雷</strong></dt><dd>红底黑色符号：结算时显示的地雷，不是这次踩中的那颗。</dd></div><div><dt><span class="mcell mine-symbol open mine boom" aria-hidden="true">💥</span><strong>踩中的地雷</strong></dt><dd>亮红底爆炸符号：本次揭开的地雷，导致本局失败。</dd></div><div><dt><span class="mcell mine-symbol question" aria-hidden="true">?</span><strong>问号标记</strong></dt><dd>表示你暂不确定，不代表已确认安全或有雷。</dd></div><div><dt><span class="mcell mine-symbol open" aria-hidden="true">1</span><strong>已揭开的数字</strong></dt><dd>数字表示周围八格的雷数；边角位置的邻居少于八格。</dd></div><div><dt><span class="mcell mine-symbol open" aria-hidden="true"></span><strong>已揭开的空白</strong></dt><dd>周围没有地雷，游戏会自动展开相连空白区域。</dd></div></dl><p class="help-note">游戏中看到旗帜，只能说明玩家标记过。结算后，误标的安全格显示红叉；正确标在地雷上的旗仍保留旗帜。揭开全部非雷格才能获胜。</p></section>
+        <p class="help-return">随时点右上角 <strong>“? 玩法说明”</strong> 或规则区的 <strong>“查看完整玩法”</strong> 重新查看。建议从初级 9 × 9 开始。</p>
       </div>
       <footer class="help-footer"><label><input type="checkbox" data-help-hide> 下次进入扫雷不再自动显示</label><button class="primary-button" data-help-close type="button">明白了，开始扫雷</button></footer>
     </dialog>
     <!-- 切换逻辑 -->
     <script type="module">
-      import { minesApp } from './src/minesUI.js?v=20261102-mines-layout';
+      import { minesApp } from './src/minesUI.js?v=20261102-mines-legend';
       const tabs = document.querySelectorAll('.game-tab');
       const views = document.querySelectorAll('.game-view');
       const indicator = document.querySelector('.tab-indicator');
@@ -485,6 +488,17 @@
         .mines-layout .hud-left, .mines-layout .hud-right { gap: 8px; }
         .mines-layout .hud-item { font-size: 14px; }
       }
+      .mine-symbol-list { margin: 14px 0 0; }
+      .mine-symbol-list > div { margin-top: 14px; }
+      .mine-symbol-list dt { display: flex; align-items: center; gap: 10px; color: var(--text); font-size: 14px; }
+      .mine-symbol-list dd { margin: 5px 0 0 44px; color: var(--text-soft); font-size: 13px; line-height: 1.7; }
+      .mine-symbol-list .mine-symbol { width: 34px; height: 34px; min-width: 34px; font-size: 21px; cursor: default; }
+      .mine-symbol-list .mine-symbol.open:not(.mine) { color: var(--mine-1, #3d6b8a); }
+      .mine-symbol-help .mine-symbol-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+      .mine-symbol-help .mine-symbol-list > div { margin: 0; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); }
+      .mine-symbol-help .mine-symbol-list dt { font-size: 16px; }
+      .mine-symbol-help .mine-symbol-list dd { font-size: 15px; }
+      @media (max-width: 560px) { .mine-symbol-help .mine-symbol-list { grid-template-columns: minmax(0, 1fr); } }
     </style>
   </body>
 </html>
