@@ -16,8 +16,8 @@
         document.documentElement.setAttribute('data-theme', t);
       })();
     </script>
-    <link rel="stylesheet" href="./src/styles.css?v=20261102-simple-panels">
-    <script type="module" src="./src/main.js?v=20261102-notes"></script>
+    <link rel="stylesheet" href="./src/styles.css?v=20261102-hint-switches">
+    <script type="module" src="./src/main.js?v=20261102-hint-switches"></script>
 
   </head>
   <body>
@@ -132,8 +132,8 @@
                     <div class="hint-wrapper">
                       <button class="tool-button hint-button" id="hint-button" type="button"><span class="tool-icon">✧</span><span>提示</span></button>
                       <div class="hint-menu" id="hint-menu" hidden>
-                        <button data-hint="candidates">显示候选数</button>
-                        <button data-hint="location">高亮唯一位置</button>
+                        <button data-hint="candidates" aria-pressed="false">显示候选数：已关闭</button>
+                        <button data-hint="location" aria-pressed="false">唯一位置高亮：已关闭</button>
                         <button data-hint="fill">直接填入</button>
                       </div>
                     </div>
@@ -263,7 +263,7 @@
         <section><h3>2．怎么操作</h3><ul class="help-operation-list">
           <li><strong>填数：</strong>先点空格，再点数字或按 1–9。填错会标红。</li>
           <li><strong>笔记：</strong>开启后记小号候选数，重复点可取消；关闭后填正式答案。</li>
-          <li><strong>提示：</strong>查看候选数、寻找唯一位置，或填入一个确定数字。</li>
+          <li><strong>提示：</strong>候选数与唯一位置高亮可分别开关；关闭不清除手动笔记。“直接填入”执行一次。</li>
           <li><strong>修改与休息：</strong>擦除清空当前格，撤销/重做回退操作，暂停可中断游戏。</li>
         </ul></section>
       </div>

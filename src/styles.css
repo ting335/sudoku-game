@@ -802,3 +802,8 @@ h1 { margin: 0; font-size: 29px; line-height: 1.15; }
 .help-two-sections .variant-summary { font-size: 15px; line-height: 1.6; }
 .help-two-sections .help-operation-list { margin: 8px 0 0; padding-left: 22px; }
 .help-two-sections .help-operation-list li { margin: 5px 0; line-height: 1.65; }
+
+.hint-menu button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+.hint-wrapper > .hint-button.hint-active { border-color: var(--accent); background: var(--accent-soft); }
+.hint-menu { width: max-content; min-width: 200px; max-width: calc(100vw - 32px); }
+.hint-menu button { white-space: nowrap; font-size: 14px; }

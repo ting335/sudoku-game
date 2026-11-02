@@ -111,7 +111,23 @@ function getCandidates(snapshot, r, c) {
 // 提示功能 ①：显示候选数
 // ============================================================
 
+export function clearCandidateHints() {
+  getAllCells().forEach(cell => {
+    if (!cell.classList.contains('auto-candidates')) return;
+    if (!cell.dataset.notes && cell.classList.contains('notes')) {
+      cell.textContent = ''; cell.classList.remove('notes');
+    }
+    cell.classList.remove('auto-candidates');
+    delete cell.dataset.autoCandidates;
+    cell.removeAttribute('aria-description');
+  });
+}
+export function clearUniqueLocations() {
+  getAllCells().forEach(cell => cell.classList.remove('hint-highlight'));
+}
+
 export function showCandidates() {
+  clearCandidateHints();
   const snapshot = getBoardSnapshot();
   const cells = getAllCells();
   let count = 0;
@@ -122,10 +138,10 @@ export function showCandidates() {
 
     const candidates = getCandidates(snapshot, r, c);
     if (candidates.length > 0 && candidates.length <= 4) {
-      cell.classList.add('notes');
-      cell.innerHTML = candidates
-        .map(n => `<span class="note-num">${n}</span>`)
-        .join('');
+      cell.classList.add('notes', 'auto-candidates');
+      cell.dataset.autoCandidates = candidates.join(',');
+      cell.setAttribute('aria-description', '自动候选数：'+candidates.join('、'));
+      cell.innerHTML = '<div class="notes-grid">'+Array.from({length:9},(_,i)=>`<span class="note-num">${candidates.includes(i+1)?i+1:''}</span>`).join('')+'</div>';
       count++;
     }
   });

@@ -9,7 +9,7 @@ import { cleanNotes, editCell, travelHistory } from './core/notes.js';
 import { setupHelp } from './help.js?v=20261102-teach';
 import { makeEvenCells, evenAllows } from './core/even.js';
 import { sfx, audio } from './audio.js?v=20261102-atmosphere';
-import { showCandidates, highlightUniqueLocation, fillOneCorrect } from './hint.js?v=20261102-notes';
+import { showCandidates, highlightUniqueLocation, fillOneCorrect, clearCandidateHints, clearUniqueLocations } from './hint.js?v=20261102-hint-switches';
 
 // ---------- 工具函数 ----------
 function shuffle(arr) {
@@ -241,7 +241,7 @@ let state = {
   puzzle: [], solution: [], userGrid: [], given: [],
   selectedCell: null, mistakes: 0, timer: 0,
   timerInterval: null, paused: false, notesMode: false, notes: {},
-  history: [], historyIndex: -1, hintUsed: false,
+  history: [], historyIndex: -1, hintUsed: false, candidatesOn: false, locationOn: false,
   difficulty: 'medium', diagonalMode: false, evenMode: false, evenCells: [],
 };
 window.__sudokuDiagonalMode = false;
@@ -292,7 +292,7 @@ function startNewGame() {
   state.given = puzzle.map(row => row.map(v => v !== 0));
   state.mistakes = 0; state.timer = 0; state.paused = false;
   state.notesMode = false; state.notes = {}; state.history = []; state.historyIndex = -1;
-  state.hintUsed = false; state.selectedCell = null;
+  state.hintUsed = false; state.candidatesOn = false; state.locationOn = false; state.selectedCell = null;
   if (pauseOverlay) pauseOverlay.hidden = true;
   if (timerEl) timerEl.textContent = formatTime(0);
   updateDiagonalRuleVisibility();
@@ -328,7 +328,7 @@ function renderBoard() {
     const el = boardEl.querySelector(`[data-row="${r}"][data-col="${c}"]`);
     state.selectedCell = {el,r,c}; el.classList.add('selected'); el.tabIndex=0;
   }
-  renderDigitPad(); updateNotesButton(); updateUndoRedoButtons();
+  renderDigitPad(); updateNotesButton(); updateUndoRedoButtons(); refreshHintLayers();
 }
 
 function renderDigitPad() {
@@ -440,7 +440,7 @@ function inputNumber(num) {
     if (state.userGrid[r][c]) { showToast('请先擦除正式答案，再记录笔记'); return; }
     const notes = cleanNotes(state.notes[r*9+c]);
     editCell(state,r,c,0,notes.includes(num) ? notes.filter(n=>n!==num) : [...notes,num]);
-    renderCellNotes(el,r,c); saveProgress(); updateUndoRedoButtons(); return;
+    renderCellNotes(el,r,c); refreshHintLayers(); saveProgress(); updateUndoRedoButtons(); return;
   }
   editCell(state,r,c,num,[]);
   el.textContent = num; el.classList.remove('notes', 'error'); el.dataset.notes = '';
@@ -457,7 +457,7 @@ function inputNumber(num) {
   clearConflictHighlights();
   highlightConflicts(getConflictCells(r, c, num));
 
-  saveProgress(); updateUndoRedoButtons();
+  refreshHintLayers(); saveProgress(); updateUndoRedoButtons();
 }
 
 function safeSfx(name) {
@@ -476,11 +476,12 @@ function eraseCell() {
   // ✅ 擦除后冲突自然解除，清掉高亮
   clearConflictHighlights();
 
-  updateProgress(); saveProgress(); updateUndoRedoButtons();
+  updateProgress(); refreshHintLayers(); saveProgress(); updateUndoRedoButtons();
 }
 
 // ---------- 笔记 ----------
 function renderCellNotes(cell,r,c) {
+  cell.classList.remove('auto-candidates'); delete cell.dataset.autoCandidates; cell.removeAttribute('aria-description');
   const notes = state.userGrid[r][c] ? [] : cleanNotes(state.notes[r*9+c]);
   cell.classList.toggle('notes',notes.length>0);
   cell.dataset.notes = notes.join(',');
@@ -504,29 +505,41 @@ function toggleNotes() {
 }
 
 // ---------- 提示菜单 ----------
+function refreshHintLayers() {
+  clearCandidateHints(); clearUniqueLocations();
+  const candidates = state.candidatesOn ? showCandidates() : 0;
+  const locations = state.locationOn ? highlightUniqueLocation() : 0;
+  if (hintMenu) {
+    [['candidates',state.candidatesOn,'显示候选数'],['location',state.locationOn,'唯一位置高亮']].forEach(([type,on,label])=>{
+      const btn = hintMenu.querySelector(`[data-hint="${type}"]`);
+      if (btn) { btn.setAttribute('aria-pressed',String(on)); btn.textContent=`${label}：${on?'已开启':'已关闭'}`; }
+    });
+  }
+  hintButton?.classList.toggle('hint-active',state.candidatesOn || state.locationOn);
+  return {candidates, locations};
+}
 function setupHintMenu() {
   if (!hintButton || !hintMenu) return;
   hintButton.addEventListener('click', e => { e.stopPropagation(); hintMenu.hidden = !hintMenu.hidden; });
   document.addEventListener('click', () => { if (hintMenu) hintMenu.hidden = true; });
   hintMenu.querySelectorAll('button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (hintMenu) hintMenu.hidden = true;
-      if (!state.selectedCell) selectFirstEmpty();
-      if (!state.selectedCell) return;
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      if (state.paused) { showToast('继续游戏后再使用提示'); return; }
       const type = btn.dataset.hint;
-      if (type === 'candidates') {
-        const count = showCandidates();
-        boardEl.querySelectorAll('.cell.notes').forEach(cell=>{
-          state.notes[+cell.dataset.row*9 + +cell.dataset.col] = cleanNotes([...cell.querySelectorAll('.note-num')].map(n=>Number(n.textContent)));
-        });
-        renderBoard(); safeSfx('hint'); state.hintUsed = true;
-        showToast(count > 0 ? `已标出 ${count} 格候选数` : '当前没有可显示的候选数');
-      } else if (type === 'location') {
-        const count = highlightUniqueLocation(); safeSfx('hint'); state.hintUsed = true;
-        showToast(count > 0 ? '找到了唯一位置，已高亮' : '暂时没有唯一位置的格子');
+      if (type === 'candidates' || type === 'location') {
+        const key = type === 'candidates' ? 'candidatesOn' : 'locationOn';
+        state[key] = !state[key];
+        const counts = refreshHintLayers();
+        if (state[key]) { state.hintUsed=true; safeSfx('hint'); }
+        const count = type === 'candidates' ? counts.candidates : counts.locations;
+        showToast(state[key] ? `已开启${type==='candidates'?'候选数':'唯一位置高亮'}${count ? `（${count} 格）` : '，当前无符合条件的空格'}` : `已关闭${type==='candidates'?'候选数（保留手动笔记）':'唯一位置高亮'}`);
       } else if (type === 'fill') {
+        hintMenu.hidden = true;
+        if (!state.selectedCell) selectFirstEmpty();
+        if (!state.selectedCell) return;
         const ok = fillOneCorrect(); safeSfx('hint'); state.hintUsed = true;
-        if (ok) { syncUserGridFromBoard(); updateProgress(); checkWin(); }
+        if (ok) { syncUserGridFromBoard(); updateProgress(); refreshHintLayers(); checkWin(); }
         else showToast('当前没有可自动填入的格子');
       }
       saveProgress();
