@@ -1,4 +1,4 @@
-import { cleanNotes, editCell, travelHistory } from './core/notes.js';
+import { cleanNotes, editCell, travelHistory, restoreNotes } from './core/notes.js?v=20261102-hint-fix';
 // ============================================================
 // 数独 · 静心一局 - main.js
 // ✅ 对角线模式 + 规则自动显隐
@@ -512,7 +512,7 @@ function refreshHintLayers() {
   if (hintMenu) {
     [['candidates',state.candidatesOn,'显示候选数'],['location',state.locationOn,'唯一位置高亮']].forEach(([type,on,label])=>{
       const btn = hintMenu.querySelector(`[data-hint="${type}"]`);
-      if (btn) { btn.setAttribute('aria-pressed',String(on)); btn.textContent=`${label}：${on?'已开启':'已关闭'}`; }
+      if (btn) { btn.setAttribute('aria-pressed',String(on)); btn.textContent=label; }
     });
   }
   hintButton?.classList.toggle('hint-active',state.candidatesOn || state.locationOn);
@@ -530,6 +530,7 @@ function setupHintMenu() {
       if (type === 'candidates' || type === 'location') {
         const key = type === 'candidates' ? 'candidatesOn' : 'locationOn';
         state[key] = !state[key];
+        if (type === 'candidates' && !state[key]) renderBoard();
         const counts = refreshHintLayers();
         if (state[key]) { state.hintUsed=true; safeSfx('hint'); }
         const count = type === 'candidates' ? counts.candidates : counts.locations;
@@ -684,7 +685,7 @@ function setupAudioControls() {
 }
 
 function saveProgress() {
-  const data = { puzzle: state.puzzle, solution: state.solution, userGrid: state.userGrid, given: state.given, mistakes: state.mistakes, timer: state.timer, notes: state.notes, notesMode: state.notesMode, history: state.history, historyIndex: state.historyIndex, difficulty: state.difficulty, diagonalMode: state.diagonalMode, evenMode: state.evenMode, evenCells: state.evenCells };
+  const data = { puzzle: state.puzzle, solution: state.solution, userGrid: state.userGrid, given: state.given, mistakes: state.mistakes, timer: state.timer, notes: state.notes, notesVersion: 1, notesMode: state.notesMode, history: state.history, historyIndex: state.historyIndex, difficulty: state.difficulty, diagonalMode: state.diagonalMode, evenMode: state.evenMode, evenCells: state.evenCells };
   try { localStorage.setItem('sudoku-progress', JSON.stringify(data)); } catch (e) {}
 }
 
@@ -692,7 +693,7 @@ function loadProgress() {
   const raw = localStorage.getItem('sudoku-progress'); if (!raw) return false;
   try {
     const data = JSON.parse(raw);
-    Object.assign(state, { puzzle: data.puzzle || [], solution: data.solution || [], userGrid: data.userGrid || [], given: data.given || [], mistakes: data.mistakes || 0, timer: data.timer || 0, history: data.history || [], historyIndex: Number.isInteger(data.historyIndex) ? Math.max(-1,Math.min(data.historyIndex,(data.history || []).length-1)) : -1, notes: Object.fromEntries(Object.entries(data.notes || {}).filter(([k])=>Number.isInteger(+k)&&+k>=0&&+k<81).map(([k,v])=>[k,cleanNotes(v)])), notesMode: data.notesMode === true, difficulty: data.difficulty || 'medium', diagonalMode: data.diagonalMode || false, evenMode: data.evenMode === true, evenCells: Array.isArray(data.evenCells) ? data.evenCells : [] });
+    Object.assign(state, { puzzle: data.puzzle || [], solution: data.solution || [], userGrid: data.userGrid || [], given: data.given || [], mistakes: data.mistakes || 0, timer: data.timer || 0, history: data.history || [], historyIndex: Number.isInteger(data.historyIndex) ? Math.max(-1,Math.min(data.historyIndex,(data.history || []).length-1)) : -1, notes: restoreNotes(data), notesMode: data.notesMode === true, difficulty: data.difficulty || 'medium', diagonalMode: data.diagonalMode || false, evenMode: data.evenMode === true, evenCells: Array.isArray(data.evenCells) ? data.evenCells : [] });
     if (difficultySelect) difficultySelect.value = state.difficulty;
     if (timerEl) timerEl.textContent = formatTime(state.timer);
     updateDiagonalRuleVisibility(); return true;

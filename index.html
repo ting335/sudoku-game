@@ -17,7 +17,7 @@
       })();
     </script>
     <link rel="stylesheet" href="./src/styles.css?v=20261102-hint-switches">
-    <script type="module" src="./src/main.js?v=20261102-hint-switches"></script>
+    <script type="module" src="./src/main.js?v=20261102-hint-fix"></script>
 
   </head>
   <body>
@@ -132,9 +132,9 @@
                     <div class="hint-wrapper">
                       <button class="tool-button hint-button" id="hint-button" type="button"><span class="tool-icon">✧</span><span>提示</span></button>
                       <div class="hint-menu" id="hint-menu" hidden>
-                        <button data-hint="candidates" aria-pressed="false">显示候选数：已关闭</button>
-                        <button data-hint="location" aria-pressed="false">唯一位置高亮：已关闭</button>
                         <button data-hint="fill">直接填入</button>
+                        <button data-hint="candidates" aria-pressed="false">显示候选数</button>
+                        <button data-hint="location" aria-pressed="false">唯一位置高亮</button>
                       </div>
                     </div>
                     <button class="tool-button" id="undo-button" type="button" disabled><span class="tool-icon">↶</span><span>撤销</span></button>

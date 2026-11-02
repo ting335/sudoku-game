@@ -1,4 +1,13 @@
 export const cleanNotes = values => [...new Set(Array.isArray(values) ? values.filter(n => Number.isInteger(n) && n >= 1 && n <= 9) : [])].sort((a,b)=>a-b);
+export function restoreNotes(data) {
+  const notes = Object.fromEntries(Object.entries(data.notes || {}).filter(([k])=>Number.isInteger(+k)&&+k>=0&&+k<81).map(([k,v])=>[k,cleanNotes(v)]));
+  const history = Array.isArray(data.history) ? data.history : [];
+  // Older candidate hints were copied into notes without an edit action.
+  // Only separate them when the complete typed history is available. Preserve
+  // ambiguous data if the 50-action limit or an older format lost provenance.
+  if (data.notesVersion === 1 || history.length >= 50 || history.some(a=>!Array.isArray(a.prevNotes)||!Array.isArray(a.nextNotes))) return notes;
+  return Object.fromEntries(Object.entries(notes).filter(([key,values])=>!values.length || history.some(a=>a.r*9+a.c===+key && [a.prevNotes,a.nextNotes].some(v=>String(cleanNotes(v))===String(values)))));
+}
 export function editCell(state, r, c, next, notes = []) {
   const key = r*9+c;
   const prevNotes = cleanNotes(state.notes[key]);
